@@ -4,8 +4,8 @@ from pathlib import Path
 
 class Settings(BaseSettings):
     minimax_api_key: str = ""
-    minimax_base_url: str = "https://api.minimax.chat/v1"
-    minimax_model: str = "MiniMax-Text-01"
+    minimax_base_url: str = "https://api.minimax.io/anthropic"
+    minimax_model: str = "MiniMax-M2.5"
 
     embed_model: str = "all-MiniLM-L6-v2"
 

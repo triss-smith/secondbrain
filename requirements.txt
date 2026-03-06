@@ -5,6 +5,7 @@ pydantic-settings
 chromadb>=1.5.2
 sentence-transformers
 httpx
+anthropic
 yt-dlp
 youtube-transcript-api
 trafilatura
