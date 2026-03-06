@@ -34,6 +34,7 @@ class Item(Base):
     summary = Column(Text)
     thumbnail = Column(String)
     tags = Column(JSON, default=list)
+    category = Column(String, default="")
     meta = Column(JSON, default=dict)
     created_at = Column(DateTime, default=datetime.utcnow)
 
@@ -74,3 +75,10 @@ class Page(Base):
 
 
 Base.metadata.create_all(bind=engine)
+
+# Migrate existing tables — add columns that may not exist yet
+with engine.connect() as conn:
+    existing = [row[1] for row in conn.execute(__import__('sqlalchemy').text("PRAGMA table_info(items)"))]
+    if "category" not in existing:
+        conn.execute(__import__('sqlalchemy').text("ALTER TABLE items ADD COLUMN category TEXT DEFAULT ''"))
+        conn.commit()

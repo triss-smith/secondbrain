@@ -32,4 +32,7 @@ async def chat(messages: list[dict], system: str | None = None) -> str:
         system=system or "",
         messages=messages,
     )
-    return response.content[0].text
+    for block in response.content:
+        if block.type == "text":
+            return block.text
+    return ""

@@ -7,6 +7,9 @@ const api = axios.create({ baseURL: '/api' })
 export const listItems = (params?: { q?: string; content_type?: string }) =>
   api.get<Item[]>('/items', { params }).then(r => r.data)
 
+export const listItemsGrouped = () =>
+  api.get<{ label: string; items: Item[] }[]>('/items/grouped').then(r => r.data)
+
 export const getItem = (id: string) =>
   api.get<Item>(`/items/${id}`).then(r => r.data)
 
@@ -27,6 +30,9 @@ export const updateItem = (id: string, data: { title?: string; tags?: string[]; 
 
 export const deleteItem = (id: string) =>
   api.delete(`/items/${id}`).then(r => r.data)
+
+export const resummarizeItem = (id: string) =>
+  api.post<Item>(`/items/${id}/resummarize`).then(r => r.data)
 
 // Boards
 export const listBoards = () =>

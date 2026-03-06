@@ -47,6 +47,19 @@ def list_items(
     return [_serialize(item) for item in items]
 
 
+@router.get("/grouped")
+def list_items_grouped(db: Session = Depends(get_db)):
+    items = db.query(Item).order_by(Item.created_at.desc()).all()
+    groups: dict[str, list] = {}
+    for item in items:
+        label = item.category or "Uncategorized"
+        groups.setdefault(label, []).append(_serialize(item))
+    return [
+        {"label": label, "items": group_items}
+        for label, group_items in sorted(groups.items(), key=lambda x: len(x[1]), reverse=True)
+    ]
+
+
 @router.get("/{item_id}")
 def get_item(item_id: str, db: Session = Depends(get_db)):
     item = db.query(Item).filter(Item.id == item_id).first()
@@ -105,6 +118,26 @@ def update_item(item_id: str, req: UpdateItemRequest, db: Session = Depends(get_
     if req.summary is not None:
         item.summary = req.summary
     db.commit()
+    if req.tags is not None:
+        vectors.update_item_metadata(item.id, content_type=item.content_type, tags=item.tags)
+    return _serialize(item)
+
+
+@router.post("/{item_id}/resummarize")
+async def resummarize_item(item_id: str, db: Session = Depends(get_db)):
+    item = db.query(Item).filter(Item.id == item_id).first()
+    if not item:
+        raise HTTPException(status_code=404, detail="Item not found")
+    tags, summary, category = await _auto_tag_summarize(item.content or "", item.title)
+    if tags:
+        item.tags = tags
+    if summary:
+        item.summary = summary
+    if category:
+        item.category = category
+    db.commit()
+    if tags:
+        vectors.update_item_metadata(item.id, content_type=item.content_type, tags=item.tags)
     return _serialize(item)
 
 
@@ -123,7 +156,7 @@ async def _save_item(result, db: Session, override_title: str | None = None) -> 
     title = override_title or result.title
 
     # Auto-generate tags + summary via MiniMax
-    tags, summary = await _auto_tag_summarize(result.content, title)
+    tags, summary, category = await _auto_tag_summarize(result.content, title)
 
     item = Item(
         title=title,
@@ -133,6 +166,7 @@ async def _save_item(result, db: Session, override_title: str | None = None) -> 
         summary=summary,
         thumbnail=result.thumbnail,
         tags=tags,
+        category=category,
         meta=result.meta,
     )
     db.add(item)
@@ -151,12 +185,13 @@ async def _save_item(result, db: Session, override_title: str | None = None) -> 
 
     db.add_all(chunk_records)
     db.commit()
-    vectors.upsert_chunks(item.id, vector_chunks)
+    vectors.upsert_chunks(item.id, vector_chunks, content_type=item.content_type, tags=tags)
 
     return _serialize(item)
 
 
-async def _auto_tag_summarize(content: str, title: str) -> tuple[list[str], str]:
+async def _auto_tag_summarize(content: str, title: str) -> tuple[list[str], str, str]:
+    import json, re
     snippet = content[:3000]
     try:
         response = await chat(
@@ -165,20 +200,46 @@ async def _auto_tag_summarize(content: str, title: str) -> tuple[list[str], str]
                     "role": "user",
                     "content": (
                         f"Title: {title}\n\nContent snippet:\n{snippet}\n\n"
-                        "Return a JSON object with two keys:\n"
-                        '- "tags": array of 3-5 lowercase topic tags\n'
-                        '- "summary": 2-3 sentence summary\n'
+                        "Return a JSON object with three keys:\n"
+                        '- "category": a single broad domain in title case (e.g. "Cooking", "Fitness", "Personal Finance", "Software Engineering"). '
+                        "This is a high-level grouping label — never a specific item or title (e.g. use 'Cooking', not 'Potato Soup').\n"
+                        '- "tags": array of 3-5 specific lowercase tags describing the exact topic (e.g. "potato soup", "weight loss", "index funds"). '
+                        "Never use vague phrases like 'this person', 'the author', 'content', or 'video'.\n"
+                        '- "summary": 2-3 sentence summary written in third person about the content itself, not the author or creator. '
+                        "Never use phrases like 'this person', 'the author', 'the creator', or 'the video'. Be specific and factual.\n"
                         "Return ONLY the JSON, no markdown fences."
                     ),
                 }
             ]
         )
-        import json
-        data = json.loads(response)
-        return data.get("tags", []), data.get("summary", "")
+        cleaned = re.sub(r"^```[a-z]*\n?", "", response.strip(), flags=re.MULTILINE)
+        cleaned = re.sub(r"```$", "", cleaned.strip())
+        data = json.loads(cleaned.strip())
+        tags = data.get("tags", [])
+        summary = data.get("summary", "")
+        category = data.get("category", "")
+        if not tags:
+            tags = _keyword_tags(title, content)
+        return tags, summary, category
     except Exception as e:
         print(f"[auto_tag_summarize] failed: {e}")
-        return [], ""
+        return _keyword_tags(title, content), "", ""
+
+
+def _keyword_tags(title: str, content: str) -> list[str]:
+    """Simple keyword fallback when AI tagging is unavailable."""
+    import re
+    text = f"{title} {content[:1000]}".lower()
+    stopwords = {"the", "a", "an", "and", "or", "but", "in", "on", "at", "to", "for",
+                 "of", "with", "by", "from", "is", "it", "this", "that", "was", "are",
+                 "be", "as", "i", "you", "he", "she", "we", "they", "not", "no", "so"}
+    words = re.findall(r'\b[a-z]{4,}\b', text)
+    freq: dict[str, int] = {}
+    for w in words:
+        if w not in stopwords:
+            freq[w] = freq.get(w, 0) + 1
+    top = sorted(freq, key=lambda w: freq[w], reverse=True)[:5]
+    return top
 
 
 def _serialize(item: Item, include_content: bool = False) -> dict:
@@ -196,6 +257,7 @@ def _serialize(item: Item, include_content: bool = False) -> dict:
         "snippet": snippet,
         "thumbnail": item.thumbnail,
         "tags": item.tags or [],
+        "category": item.category or "",
         "meta": item.meta or {},
         "created_at": item.created_at.isoformat() if item.created_at else None,
     }

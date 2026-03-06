@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import { Link2, FileUp, Loader2, StickyNote, X } from 'lucide-react'
 import { useIngest } from '../hooks/useIngest'
+import { NoteModal } from '../components/NoteModal'
 import type { Item } from '../types'
 
 interface Props {
@@ -9,7 +10,7 @@ interface Props {
 
 export function CaptureBar({ onIngested }: Props) {
   const [input, setInput] = useState('')
-  const [mode, setMode] = useState<'url' | 'note'>('url')
+  const [noteOpen, setNoteOpen] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
   const { submit, isLoading, error } = useIngest(item => {
     setInput('')
@@ -39,18 +40,8 @@ export function CaptureBar({ onIngested }: Props) {
 
       <div className="flex gap-1 mb-2">
         <button
-          onClick={() => setMode('url')}
-          className={`flex-1 text-[11px] py-1 rounded-lg transition-colors flex items-center justify-center gap-1 ${
-            mode === 'url' ? 'bg-accent text-white' : 'bg-surface-2 text-slate-400 hover:text-white'
-          }`}
-        >
-          <Link2 size={11} /> URL
-        </button>
-        <button
-          onClick={() => setMode('note')}
-          className={`flex-1 text-[11px] py-1 rounded-lg transition-colors flex items-center justify-center gap-1 ${
-            mode === 'note' ? 'bg-accent text-white' : 'bg-surface-2 text-slate-400 hover:text-white'
-          }`}
+          onClick={() => setNoteOpen(true)}
+          className="flex-1 text-[11px] py-1 rounded-lg bg-surface-2 text-slate-400 hover:text-white transition-colors flex items-center justify-center gap-1"
         >
           <StickyNote size={11} /> Note
         </button>
@@ -64,39 +55,30 @@ export function CaptureBar({ onIngested }: Props) {
 
       <input ref={fileRef} type="file" accept=".pdf,.txt,.md" className="hidden" onChange={handleFile} />
 
-      {mode === 'url' ? (
-        <input
-          className="w-full bg-surface-2 text-xs text-white placeholder-slate-500 rounded-lg px-3 py-2 outline-none border border-transparent focus:border-accent transition-colors"
-          placeholder="Paste a YouTube, TikTok, article URL..."
-          value={input}
-          onChange={e => setInput(e.target.value)}
-          onKeyDown={e => e.key === 'Enter' && handleSubmit()}
-          disabled={isLoading}
-        />
-      ) : (
-        <textarea
-          className="w-full bg-surface-2 text-xs text-white placeholder-slate-500 rounded-lg px-3 py-2 outline-none border border-transparent focus:border-accent transition-colors resize-none"
-          placeholder="Type or paste a note..."
-          rows={3}
-          value={input}
-          onChange={e => setInput(e.target.value)}
-          disabled={isLoading}
-        />
-      )}
+      <input
+        className="w-full bg-surface-2 text-xs text-white placeholder-slate-500 rounded-lg px-3 py-2 outline-none border border-transparent focus:border-accent transition-colors"
+        placeholder="Paste a YouTube, TikTok, article URL..."
+        value={input}
+        onChange={e => setInput(e.target.value)}
+        onKeyDown={e => e.key === 'Enter' && handleSubmit()}
+        disabled={isLoading}
+      />
 
       <button
         onClick={handleSubmit}
         disabled={isLoading || !input.trim()}
         className="mt-2 w-full bg-accent hover:bg-accent-hover disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-semibold py-2 rounded-lg transition-colors flex items-center justify-center gap-2"
       >
-        {isLoading ? (
-          <>
-            <Loader2 size={12} className="animate-spin" /> Processing...
-          </>
-        ) : (
-          'Add to Brain'
-        )}
+        {isLoading ? <><Loader2 size={12} className="animate-spin" /> Processing...</> : 'Add to Brain'}
       </button>
+
+      {noteOpen && (
+        <NoteModal
+          onClose={() => setNoteOpen(false)}
+          onSubmit={text => submit(text)}
+          isLoading={isLoading}
+        />
+      )}
     </div>
   )
 }

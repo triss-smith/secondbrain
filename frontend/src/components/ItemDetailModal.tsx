@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react'
-import { X, ExternalLink, PlusSquare } from 'lucide-react'
-import { getItem } from '../api'
+import { useEffect, useRef, useState } from 'react'
+import { X, ExternalLink, PlusSquare, Plus } from 'lucide-react'
+import { getItem, updateItem } from '../api'
 import type { Item } from '../types'
 import { CONTENT_TYPE_COLORS, CONTENT_TYPE_LABELS } from '../canvas/nodeUtils'
 
@@ -13,10 +13,15 @@ interface Props {
 export function ItemDetailModal({ itemId, onClose, onAddToCanvas }: Props) {
   const [item, setItem] = useState<Item | null>(null)
   const [loading, setLoading] = useState(true)
+  const [tags, setTags] = useState<string[]>([])
+  const [tagInput, setTagInput] = useState('')
+  const [savingTags, setSavingTags] = useState(false)
+  const tagInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     getItem(itemId).then(data => {
       setItem(data)
+      setTags(data.tags ?? [])
       setLoading(false)
     })
   }, [itemId])
@@ -32,12 +37,37 @@ export function ItemDetailModal({ itemId, onClose, onAddToCanvas }: Props) {
   const color = item ? (CONTENT_TYPE_COLORS[item.content_type] ?? '#7c6af7') : '#7c6af7'
   const label = item ? CONTENT_TYPE_LABELS[item.content_type] : ''
 
-  // Strip ingest header lines for clean display
   function cleanContent(raw: string): string {
     const lines = raw.split('\n')
     const headerKeys = ['Title:', 'Channel:', 'Author:', 'URL:', 'Transcript:', 'Creator:', 'Podcast:', 'Caption/Description:', 'Caption:']
     const firstNonHeader = lines.findIndex(l => !headerKeys.some(k => l.startsWith(k)) && l.trim() !== '')
     return lines.slice(firstNonHeader).join('\n').trim()
+  }
+
+  function addTag() {
+    const t = tagInput.trim().toLowerCase()
+    if (!t || tags.includes(t)) { setTagInput(''); return }
+    const updated = [...tags, t]
+    setTags(updated)
+    setTagInput('')
+    saveTags(updated)
+  }
+
+  function removeTag(tag: string) {
+    const updated = tags.filter(t => t !== tag)
+    setTags(updated)
+    saveTags(updated)
+  }
+
+  async function saveTags(updated: string[]) {
+    if (!item) return
+    setSavingTags(true)
+    try {
+      await updateItem(item.id, { tags: updated })
+      setItem(prev => prev ? { ...prev, tags: updated } : prev)
+    } finally {
+      setSavingTags(false)
+    }
   }
 
   return (
@@ -60,15 +90,43 @@ export function ItemDetailModal({ itemId, onClose, onAddToCanvas }: Props) {
                   {label}
                 </span>
                 <h2 className="text-base font-bold text-white leading-snug mt-1">{item?.title}</h2>
-                {item?.tags && item.tags.length > 0 && (
-                  <div className="flex flex-wrap gap-1 mt-2">
-                    {item.tags.map(tag => (
-                      <span key={tag} className="text-[10px] px-2 py-0.5 rounded-full bg-surface-3 text-slate-400">
-                        {tag}
-                      </span>
-                    ))}
+
+                {/* Tags */}
+                <div className="flex flex-wrap gap-1 mt-2 items-center">
+                  {tags.map(tag => (
+                    <span
+                      key={tag}
+                      className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-surface-3 text-slate-400 group"
+                    >
+                      {tag}
+                      <button
+                        onClick={() => removeTag(tag)}
+                        className="opacity-0 group-hover:opacity-100 hover:text-red-400 transition-opacity"
+                      >
+                        <X size={9} />
+                      </button>
+                    </span>
+                  ))}
+
+                  {/* Add tag input */}
+                  <div className="flex items-center gap-1">
+                    <input
+                      ref={tagInputRef}
+                      value={tagInput}
+                      onChange={e => setTagInput(e.target.value)}
+                      onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addTag() } }}
+                      placeholder="add tag..."
+                      className="bg-transparent text-[10px] text-slate-400 placeholder-slate-600 outline-none w-16 focus:w-24 transition-all"
+                    />
+                    <button
+                      onClick={addTag}
+                      className="text-slate-600 hover:text-accent transition-colors"
+                    >
+                      <Plus size={11} />
+                    </button>
                   </div>
-                )}
+                  {savingTags && <span className="text-[9px] text-slate-600">saving...</span>}
+                </div>
               </>
             )}
           </div>

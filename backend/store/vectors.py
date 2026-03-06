@@ -21,15 +21,35 @@ def _get_collection():
     return _collection
 
 
-def upsert_chunks(item_id: str, chunks: list[dict]):
+def upsert_chunks(item_id: str, chunks: list[dict], content_type: str = "", tags: list[str] | None = None):
     """chunks: list of {id, content, embedding, chunk_index}"""
     col = _get_collection()
+    tags_str = ",".join(tags) if tags else ""
     col.upsert(
         ids=[c["id"] for c in chunks],
         documents=[c["content"] for c in chunks],
         embeddings=[c["embedding"] for c in chunks],
-        metadatas=[{"item_id": item_id, "chunk_index": c.get("chunk_index", 0)} for c in chunks],
+        metadatas=[{
+            "item_id": item_id,
+            "chunk_index": c.get("chunk_index", 0),
+            "content_type": content_type,
+            "tags": tags_str,
+        } for c in chunks],
     )
+
+
+def update_item_metadata(item_id: str, content_type: str = "", tags: list[str] | None = None):
+    """Update metadata on all chunks for an item without re-embedding."""
+    col = _get_collection()
+    results = col.get(where={"item_id": item_id}, include=["metadatas"])
+    if not results["ids"]:
+        return
+    tags_str = ",".join(tags) if tags else ""
+    updated_metadatas = [
+        {**m, "content_type": content_type, "tags": tags_str}
+        for m in results["metadatas"]
+    ]
+    col.update(ids=results["ids"], metadatas=updated_metadatas)
 
 
 def search(

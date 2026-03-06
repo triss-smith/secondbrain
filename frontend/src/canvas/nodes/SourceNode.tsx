@@ -1,10 +1,15 @@
+import { useState } from 'react'
 import { Handle, Position, type NodeProps } from 'reactflow'
-import { ExternalLink, Trash2, MessageSquarePlus } from 'lucide-react'
+import { ExternalLink, Trash2, MessageSquarePlus, RefreshCw } from 'lucide-react'
 import type { SourceNodeData } from '../../types'
 import { CONTENT_TYPE_COLORS, CONTENT_TYPE_ICONS, CONTENT_TYPE_LABELS } from '../nodeUtils'
+import { resummarizeItem } from '../../api'
 
 export function SourceNode({ data, selected }: NodeProps<SourceNodeData>) {
   const { item } = data
+  const [summary, setSummary] = useState(item.summary)
+  const [tags, setTags] = useState(item.tags)
+  const [resummarizing, setResummarizing] = useState(false)
   const color = CONTENT_TYPE_COLORS[item.content_type] ?? '#7c6af7'
   const Icon = CONTENT_TYPE_ICONS[item.content_type]
   const label = CONTENT_TYPE_LABELS[item.content_type]
@@ -36,7 +41,7 @@ export function SourceNode({ data, selected }: NodeProps<SourceNodeData>) {
           >
             {label}
           </span>
-          {item.tags.slice(0, 2).map(tag => (
+          {tags.slice(0, 2).map(tag => (
             <span key={tag} className="text-[10px] px-1.5 py-0.5 rounded-full bg-surface-3 text-slate-400">
               {tag}
             </span>
@@ -47,12 +52,29 @@ export function SourceNode({ data, selected }: NodeProps<SourceNodeData>) {
         <p className="text-sm font-semibold text-white leading-snug line-clamp-2 mb-1">{item.title}</p>
 
         {/* Summary or snippet */}
-        {(item.summary || item.snippet) && (
-          <p className="text-xs text-slate-400 line-clamp-2 mb-2">{item.summary || item.snippet}</p>
+        {(summary || item.snippet) && (
+          <p className="text-xs text-slate-400 line-clamp-2 mb-2">{summary || item.snippet}</p>
         )}
 
         {/* Actions */}
         <div className="flex items-center gap-2 pt-1 border-t border-surface-3">
+          <button
+            className="nodrag text-slate-400 hover:text-accent transition-colors p-1 rounded disabled:opacity-40"
+            title="Regenerate summary & tags"
+            disabled={resummarizing}
+            onClick={async () => {
+              setResummarizing(true)
+              try {
+                const updated = await resummarizeItem(item.id)
+                setSummary(updated.summary)
+                setTags(updated.tags)
+              } finally {
+                setResummarizing(false)
+              }
+            }}
+          >
+            <RefreshCw size={13} className={resummarizing ? 'animate-spin' : ''} />
+          </button>
           <button
             className="nodrag text-slate-400 hover:text-accent transition-colors p-1 rounded"
             title="Chat with this item"
