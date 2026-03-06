@@ -89,6 +89,23 @@ def get_item_embedding(item_id: str) -> list[float] | None:
     return None
 
 
+def get_embeddings_for_items(item_ids: list[str]) -> dict[str, list[float]]:
+    """Return a map of item_id -> embedding for each item that has one."""
+    col = _get_collection()
+    result = {}
+    for item_id in item_ids:
+        results = col.get(
+            where={"item_id": item_id},
+            include=["embeddings"],
+            limit=1,
+        )
+        if results["embeddings"] and len(results["embeddings"]) > 0:
+            emb = results["embeddings"][0]
+            if emb is not None and len(emb) > 0:
+                result[item_id] = emb
+    return result
+
+
 def delete_item(item_id: str):
     col = _get_collection()
     results = col.get(where={"item_id": item_id})

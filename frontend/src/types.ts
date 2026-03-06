@@ -39,9 +39,9 @@ export interface BoardState {
 
 export interface CanvasNode {
   id: string
-  type: 'source' | 'chat' | 'page' | 'mindMap'
+  type: 'source' | 'chat' | 'page'
   position: { x: number; y: number }
-  data: SourceNodeData | ChatNodeData | PageNodeData | MindMapNodeData
+  data: SourceNodeData | ChatNodeData | PageNodeData
 }
 
 export interface SourceNodeData {
@@ -58,28 +58,6 @@ export interface PageNodeData {
   page_id: string
   title: string
   content: string
-}
-
-export interface MindMapNodeData {
-  nodes: MindMapItem[]
-  edges: MindMapEdge[]
-}
-
-export interface MindMapItem {
-  id: string
-  item_id: string
-  label: string
-  content_type: ContentType
-  thumbnail: string | null
-  summary?: string
-  snippet?: string
-}
-
-export interface MindMapEdge {
-  id: string
-  source: string
-  target: string
-  similarity: number
 }
 
 export interface CanvasEdge {

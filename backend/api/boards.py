@@ -2,7 +2,6 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from backend.ai.mindmap import compute_mind_map
 from backend.store.db import Board, Page, get_db
 
 router = APIRouter(prefix="/api/boards", tags=["boards"])
@@ -63,12 +62,6 @@ def delete_board(board_id: str, db: Session = Depends(get_db)):
     db.delete(board)
     db.commit()
     return {"ok": True}
-
-
-@router.get("/{board_id}/mindmap")
-def get_mind_map(board_id: str, db: Session = Depends(get_db)):
-    _get_or_404(board_id, db)
-    return compute_mind_map()
 
 
 # --- Pages ---

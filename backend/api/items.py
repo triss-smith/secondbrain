@@ -32,6 +32,11 @@ class UpdateItemRequest(BaseModel):
     summary: Optional[str] = None
 
 
+class SimilaritiesRequest(BaseModel):
+    item_ids: list[str]
+    threshold: float = 0.55
+
+
 @router.get("")
 def list_items(
     q: Optional[str] = None,
@@ -150,6 +155,32 @@ def delete_item(item_id: str, db: Session = Depends(get_db)):
     db.delete(item)
     db.commit()
     return {"ok": True}
+
+
+@router.post("/similarities")
+def get_similarities(req: SimilaritiesRequest):
+    import math
+
+    embeddings = vectors.get_embeddings_for_items(req.item_ids)
+
+    def cosine(a, b):
+        dot = sum(x * y for x, y in zip(a, b))
+        na = math.sqrt(sum(x * x for x in a))
+        nb = math.sqrt(sum(x * x for x in b))
+        return dot / (na * nb) if na and nb else 0.0
+
+    ids = list(embeddings.keys())
+    edges = []
+    for i in range(len(ids)):
+        for j in range(i + 1, len(ids)):
+            sim = cosine(embeddings[ids[i]], embeddings[ids[j]])
+            if sim >= req.threshold:
+                edges.append({
+                    "source": ids[i],
+                    "target": ids[j],
+                    "similarity": round(sim, 3),
+                })
+    return edges
 
 
 async def _save_item(result, db: Session, override_title: str | None = None) -> dict:

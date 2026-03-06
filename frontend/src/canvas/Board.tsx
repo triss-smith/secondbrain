@@ -12,11 +12,10 @@ import ReactFlow, {
 } from 'reactflow'
 import 'reactflow/dist/style.css'
 
-import { getMindMap } from '../api'
+import { getItemSimilarities } from '../api'
 import { useBoard } from '../hooks/useBoard'
-import type { Item } from '../types'
+import type { Item, SourceNodeData } from '../types'
 import { SemanticEdge } from './edges/SemanticEdge'
-import { MindMapNode } from './nodes/MindMapNode'
 import { ChatNode } from './nodes/ChatNode'
 import { PageNode } from './nodes/PageNode'
 import { SourceNode } from './nodes/SourceNode'
@@ -26,7 +25,6 @@ const NODE_TYPES = {
   source: SourceNode,
   chat: ChatNode,
   page: PageNode,
-  mindMap: MindMapNode,
 }
 
 const EDGE_TYPES = {
@@ -89,13 +87,6 @@ export function Board({ }: Props) {
       scheduleSave(updated, edges)
     }
 
-    function onRemovePageNode(e: Event) {
-      const { node_id } = (e as CustomEvent).detail
-      const updated = nodes.filter(n => n.id !== node_id)
-      setNodes(updated)
-      scheduleSave(updated, edges)
-    }
-
     function onSaveAsPage(e: Event) {
       const { node_id, title, content } = (e as CustomEvent).detail
       const chatNode = nodes.find(n => n.id === node_id)
@@ -112,23 +103,10 @@ export function Board({ }: Props) {
 
     function onItemDeleted(e: Event) {
       const { item_id } = (e as CustomEvent).detail
-      // Remove source nodes for this item
-      // Remove this item from any mind map nodes and chat nodes
+      // Remove source nodes for this item and update chat nodes
       setNodes(ns => ns
         .filter(n => n.data?.item?.id !== item_id)
         .map(n => {
-          if (n.type === 'mindMap') {
-            return {
-              ...n,
-              data: {
-                ...n.data,
-                nodes: (n.data.nodes as {item_id: string}[]).filter(mn => mn.item_id !== item_id),
-                edges: (n.data.edges as {source: string; target: string}[]).filter(
-                  e => e.source !== `mm-${item_id}` && e.target !== `mm-${item_id}`
-                ),
-              },
-            }
-          }
           if (n.type === 'chat') {
             return { ...n, data: { ...n.data, item_ids: (n.data.item_ids as string[]).filter((id: string) => id !== item_id) } }
           }
@@ -140,7 +118,6 @@ export function Board({ }: Props) {
     window.addEventListener('open-chat', onOpenChat)
     window.addEventListener('remove-node', onRemoveNode)
     window.addEventListener('remove-chat-node', onRemoveChatNode)
-    window.addEventListener('remove-page-node', onRemovePageNode)
     window.addEventListener('save-as-page', onSaveAsPage)
     window.addEventListener('item-deleted', onItemDeleted)
 
@@ -148,7 +125,6 @@ export function Board({ }: Props) {
       window.removeEventListener('open-chat', onOpenChat)
       window.removeEventListener('remove-node', onRemoveNode)
       window.removeEventListener('remove-chat-node', onRemoveChatNode)
-      window.removeEventListener('remove-page-node', onRemovePageNode)
       window.removeEventListener('save-as-page', onSaveAsPage)
       window.removeEventListener('item-deleted', onItemDeleted)
     }
@@ -163,6 +139,31 @@ export function Board({ }: Props) {
     window.addEventListener('add-item-to-canvas', onAddItem)
     return () => window.removeEventListener('add-item-to-canvas', onAddItem)
   }, [nodes])
+
+  useEffect(() => {
+    const sourceNodes = nodes.filter(n => n.type === 'source')
+    const itemIds = sourceNodes.map(n => (n.data as SourceNodeData).item.id)
+
+    if (itemIds.length < 2) {
+      // Remove any existing semantic edges if fewer than 2 source nodes
+      setEdges(prev => prev.filter(e => e.type !== 'semantic'))
+      return
+    }
+
+    getItemSimilarities(itemIds).then(pairs => {
+      const semanticEdges = pairs.map(p => ({
+        id: `sem-${p.source}-${p.target}`,
+        source: sourceNodes.find(n => (n.data as SourceNodeData).item.id === p.source)!.id,
+        target: sourceNodes.find(n => (n.data as SourceNodeData).item.id === p.target)!.id,
+        type: 'semantic',
+        data: { similarity: p.similarity },
+      }))
+      setEdges(prev => [
+        ...prev.filter(e => e.type !== 'semantic'),
+        ...semanticEdges,
+      ])
+    })
+  }, [nodes.filter(n => n.type === 'source').map(n => n.id).join(',')])
 
   function addSourceNode(item: Item) {
     const exists = nodes.some(n => n.data?.item?.id === item.id)
@@ -189,45 +190,6 @@ export function Board({ }: Props) {
     const updated = [...nodes, newNode]
     setNodes(updated)
     scheduleSave(updated, edges)
-  }
-
-  async function showMindMap() {
-    if (!board) return
-    try {
-      const data = await getMindMap(board.id)
-
-      if (!data.nodes.length) {
-        alert('No items with embeddings found. Add some content first.')
-        return
-      }
-
-      const nodeData = {
-        nodes: data.nodes.map((n: { id: string; data: Record<string, unknown> }) => ({
-          ...n.data,
-          id: n.id,
-        })),
-        edges: data.edges.map((e: { id: string; source: string; target: string; data?: { similarity?: number } }) => ({
-          id: e.id,
-          source: e.source,
-          target: e.target,
-          similarity: e.data?.similarity ?? 0,
-        })),
-      }
-
-      // Update existing mind map node if one exists, otherwise add new
-      const existingIndex = nodes.findIndex(n => n.type === 'mindMap')
-      let updated: Node[]
-      if (existingIndex !== -1) {
-        updated = nodes.map(n => n.type === 'mindMap' ? { ...n, data: nodeData } : n)
-      } else {
-        updated = [...nodes, { id: `mindmap-${Date.now()}`, type: 'mindMap', position: { x: 0, y: 0 }, data: nodeData }]
-      }
-      setNodes(updated)
-      scheduleSave(updated, edges)
-    } catch (err) {
-      console.error('Failed to load mind map', err)
-      alert('Failed to load mind map. Check the console for details.')
-    }
   }
 
   return (
@@ -264,7 +226,6 @@ export function Board({ }: Props) {
         <Toolbar
           boardId={board.id}
           onAddChat={() => addChatNode()}
-          onShowMindMap={showMindMap}
         />
       )}
     </ReactFlow>

@@ -34,6 +34,12 @@ export const deleteItem = (id: string) =>
 export const resummarizeItem = (id: string) =>
   api.post<Item>(`/items/${id}/resummarize`).then(r => r.data)
 
+export const getItemSimilarities = (item_ids: string[], threshold = 0.55) =>
+  api.post<{ source: string; target: string; similarity: number }[]>(
+    '/items/similarities',
+    { item_ids, threshold }
+  ).then(r => r.data)
+
 // Boards
 export const listBoards = () =>
   api.get<Board[]>('/boards').then(r => r.data)
@@ -46,9 +52,6 @@ export const getBoard = (id: string) =>
 
 export const saveBoardState = (id: string, state: BoardState) =>
   api.put(`/boards/${id}/state`, { state }).then(r => r.data)
-
-export const getMindMap = (boardId: string) =>
-  api.get(`/boards/${boardId}/mindmap`).then(r => r.data)
 
 // Pages
 export const listPages = (boardId: string) =>
