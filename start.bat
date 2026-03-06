@@ -2,7 +2,7 @@
 echo Starting Second Brain...
 
 :: Backend
-start "Backend" cmd /k "cd /d %~dp0 && uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload"
+start "Backend" cmd /k "cd /d %~dp0 && py -3.12 -m uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload"
 
 :: Frontend
 start "Frontend" cmd /k "cd /d %~dp0\frontend && npm run dev"
