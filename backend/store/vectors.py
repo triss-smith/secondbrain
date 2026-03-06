@@ -64,7 +64,7 @@ def get_item_embedding(item_id: str) -> list[float] | None:
         include=["embeddings"],
         limit=1,
     )
-    if results["embeddings"]:
+    if results["embeddings"] is not None and len(results["embeddings"]) > 0:
         return results["embeddings"][0]
     return None
 

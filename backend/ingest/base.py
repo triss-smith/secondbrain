@@ -54,7 +54,10 @@ async def ingest_url(url: str) -> IngestResult:
     return await ingest(url)
 
 
-async def ingest_text(text: str, title: str = "Note") -> IngestResult:
+async def ingest_text(text: str, title: str | None = None) -> IngestResult:
+    if not title:
+        first_line = text.strip().split("\n")[0].strip()
+        title = first_line[:80] if first_line else "Note"
     return IngestResult(title=title, content=text, content_type="note")
 
 

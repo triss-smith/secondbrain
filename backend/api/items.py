@@ -176,7 +176,8 @@ async def _auto_tag_summarize(content: str, title: str) -> tuple[list[str], str]
         import json
         data = json.loads(response)
         return data.get("tags", []), data.get("summary", "")
-    except Exception:
+    except Exception as e:
+        print(f"[auto_tag_summarize] failed: {e}")
         return [], ""
 
 
