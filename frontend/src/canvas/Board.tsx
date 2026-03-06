@@ -77,17 +77,23 @@ export function Board({ }: Props) {
 
     function onRemoveNode(e: Event) {
       const { item_id } = (e as CustomEvent).detail
-      setNodes(ns => ns.filter(n => n.data?.item?.id !== item_id))
+      const updated = nodes.filter(n => n.data?.item?.id !== item_id)
+      setNodes(updated)
+      scheduleSave(updated, edges)
     }
 
     function onRemoveChatNode(e: Event) {
       const { node_id } = (e as CustomEvent).detail
-      setNodes(ns => ns.filter(n => n.id !== node_id))
+      const updated = nodes.filter(n => n.id !== node_id)
+      setNodes(updated)
+      scheduleSave(updated, edges)
     }
 
     function onRemovePageNode(e: Event) {
       const { node_id } = (e as CustomEvent).detail
-      setNodes(ns => ns.filter(n => n.id !== node_id))
+      const updated = nodes.filter(n => n.id !== node_id)
+      setNodes(updated)
+      scheduleSave(updated, edges)
     }
 
     function onSaveAsPage(e: Event) {
@@ -104,11 +110,39 @@ export function Board({ }: Props) {
       setNodes(ns => [...ns, newNode])
     }
 
+    function onItemDeleted(e: Event) {
+      const { item_id } = (e as CustomEvent).detail
+      // Remove source nodes for this item
+      // Remove this item from any mind map nodes and chat nodes
+      setNodes(ns => ns
+        .filter(n => n.data?.item?.id !== item_id)
+        .map(n => {
+          if (n.type === 'mindMap') {
+            return {
+              ...n,
+              data: {
+                ...n.data,
+                nodes: (n.data.nodes as {item_id: string}[]).filter(mn => mn.item_id !== item_id),
+                edges: (n.data.edges as {source: string; target: string}[]).filter(
+                  e => e.source !== `mm-${item_id}` && e.target !== `mm-${item_id}`
+                ),
+              },
+            }
+          }
+          if (n.type === 'chat') {
+            return { ...n, data: { ...n.data, item_ids: (n.data.item_ids as string[]).filter((id: string) => id !== item_id) } }
+          }
+          return n
+        })
+      )
+    }
+
     window.addEventListener('open-chat', onOpenChat)
     window.addEventListener('remove-node', onRemoveNode)
     window.addEventListener('remove-chat-node', onRemoveChatNode)
     window.addEventListener('remove-page-node', onRemovePageNode)
     window.addEventListener('save-as-page', onSaveAsPage)
+    window.addEventListener('item-deleted', onItemDeleted)
 
     return () => {
       window.removeEventListener('open-chat', onOpenChat)
@@ -116,6 +150,7 @@ export function Board({ }: Props) {
       window.removeEventListener('remove-chat-node', onRemoveChatNode)
       window.removeEventListener('remove-page-node', onRemovePageNode)
       window.removeEventListener('save-as-page', onSaveAsPage)
+      window.removeEventListener('item-deleted', onItemDeleted)
     }
   }, [nodes, board?.id])
 
@@ -160,26 +195,38 @@ export function Board({ }: Props) {
     if (!board) return
     try {
       const data = await getMindMap(board.id)
-      const id = `mindmap-${Date.now()}`
-      const newNode: Node = {
-        id,
-        type: 'mindMap',
-        position: { x: 80, y: 80 },
-        data: {
-          nodes: data.nodes.map((n: never) => (n as { data: unknown }).data),
-          edges: data.edges.map((e: never) => ({
-            id: (e as { id: string }).id,
-            source: (e as { source: string }).source,
-            target: (e as { target: string }).target,
-            similarity: ((e as { data?: { similarity?: number } }).data?.similarity) ?? 0,
-          })),
-        },
+
+      if (!data.nodes.length) {
+        alert('No items with embeddings found. Add some content first.')
+        return
       }
-      const updated = [...nodes, newNode]
+
+      const nodeData = {
+        nodes: data.nodes.map((n: { id: string; data: Record<string, unknown> }) => ({
+          ...n.data,
+          id: n.id,
+        })),
+        edges: data.edges.map((e: { id: string; source: string; target: string; data?: { similarity?: number } }) => ({
+          id: e.id,
+          source: e.source,
+          target: e.target,
+          similarity: e.data?.similarity ?? 0,
+        })),
+      }
+
+      // Update existing mind map node if one exists, otherwise add new
+      const existingIndex = nodes.findIndex(n => n.type === 'mindMap')
+      let updated: Node[]
+      if (existingIndex !== -1) {
+        updated = nodes.map(n => n.type === 'mindMap' ? { ...n, data: nodeData } : n)
+      } else {
+        updated = [...nodes, { id: `mindmap-${Date.now()}`, type: 'mindMap', position: { x: 0, y: 0 }, data: nodeData }]
+      }
       setNodes(updated)
       scheduleSave(updated, edges)
     } catch (err) {
       console.error('Failed to load mind map', err)
+      alert('Failed to load mind map. Check the console for details.')
     }
   }
 

@@ -22,10 +22,17 @@ def compute_mind_map(threshold: float = 0.55) -> dict:
     item_embeddings: dict[str, list[float]] = {}
     for item in items:
         emb = vec_store.get_item_embedding(item.id)
-        if emb:
+        if emb is not None and len(emb) > 0:
             item_embeddings[item.id] = emb
 
     # Build nodes
+    def _snippet(item: Item) -> str:
+        raw = (item.content or "").strip()
+        lines = [l for l in raw.splitlines() if l.strip() and not l.startswith(
+            ("Title:", "Channel:", "Author:", "URL:", "Transcript:", "Creator:", "Podcast:", "Caption:")
+        )]
+        return " ".join(" ".join(lines).split())[:120]
+
     nodes = [
         {
             "id": f"mm-{item.id}",
@@ -35,6 +42,8 @@ def compute_mind_map(threshold: float = 0.55) -> dict:
                 "label": item.title,
                 "content_type": item.content_type,
                 "thumbnail": item.thumbnail,
+                "summary": item.summary or "",
+                "snippet": _snippet(item),
             },
             "position": _circle_position(i, len(items)),
         }

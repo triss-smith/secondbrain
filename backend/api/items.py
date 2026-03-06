@@ -182,12 +182,18 @@ async def _auto_tag_summarize(content: str, title: str) -> tuple[list[str], str]
 
 
 def _serialize(item: Item, include_content: bool = False) -> dict:
+    raw = (item.content or "").strip()
+    # Strip header lines (e.g. "Title: ...\nChannel: ...") for notes/articles
+    content_lines = [l for l in raw.splitlines() if l.strip() and not l.startswith(("Title:", "Channel:", "Author:", "URL:"))]
+    snippet = " ".join(" ".join(content_lines).split())[:200] if content_lines else ""
+
     out = {
         "id": item.id,
         "title": item.title,
         "source_url": item.source_url,
         "content_type": item.content_type,
         "summary": item.summary,
+        "snippet": snippet,
         "thumbnail": item.thumbnail,
         "tags": item.tags or [],
         "meta": item.meta or {},

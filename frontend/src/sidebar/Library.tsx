@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
-import { Search, PlusSquare } from 'lucide-react'
-import { listItems, semanticSearch } from '../api'
+import { Search, PlusSquare, Trash2 } from 'lucide-react'
+import { listItems, semanticSearch, deleteItem } from '../api'
 import type { Item } from '../types'
 import { CONTENT_TYPE_COLORS, CONTENT_TYPE_ICONS, CONTENT_TYPE_LABELS } from '../canvas/nodeUtils'
+import { ItemDetailModal } from '../components/ItemDetailModal'
 
 interface Props {
   onAddToCanvas: (item: Item) => void
@@ -13,6 +14,7 @@ export function Library({ onAddToCanvas, refreshTrigger }: Props) {
   const [items, setItems] = useState<Item[]>([])
   const [query, setQuery] = useState('')
   const [loading, setLoading] = useState(false)
+  const [selectedItemId, setSelectedItemId] = useState<string | null>(null)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
@@ -74,20 +76,37 @@ export function Library({ onAddToCanvas, refreshTrigger }: Props) {
           </div>
         )}
         {items.map(item => (
-          <LibraryItem key={item.id} item={item} onAdd={onAddToCanvas} />
+          <LibraryItem
+            key={item.id}
+            item={item}
+            onAdd={onAddToCanvas}
+            onClick={() => setSelectedItemId(item.id)}
+            onDelete={() => {
+              setItems(prev => prev.filter(i => i.id !== item.id))
+              deleteItem(item.id)
+              window.dispatchEvent(new CustomEvent('item-deleted', { detail: { item_id: item.id } }))
+            }}
+          />
         ))}
+        {selectedItemId && (
+          <ItemDetailModal
+            itemId={selectedItemId}
+            onClose={() => setSelectedItemId(null)}
+            onAddToCanvas={item => { onAddToCanvas(item); setSelectedItemId(null) }}
+          />
+        )}
       </div>
     </div>
   )
 }
 
-function LibraryItem({ item, onAdd }: { item: Item; onAdd: (item: Item) => void }) {
+function LibraryItem({ item, onAdd, onClick, onDelete }: { item: Item; onAdd: (item: Item) => void; onClick: () => void; onDelete: () => void }) {
   const color = CONTENT_TYPE_COLORS[item.content_type] ?? '#7c6af7'
   const Icon = CONTENT_TYPE_ICONS[item.content_type]
   const label = CONTENT_TYPE_LABELS[item.content_type]
 
   return (
-    <div className="flex items-start gap-3 px-3 py-2.5 hover:bg-surface-2 transition-colors group border-b border-surface-3/50">
+    <div onClick={onClick} className="flex items-start gap-3 px-3 py-2.5 hover:bg-surface-2 transition-colors group border-b border-surface-3/50 cursor-pointer">
       {/* Thumbnail or icon */}
       <div
         className="shrink-0 w-10 h-10 rounded-lg overflow-hidden flex items-center justify-center"
@@ -107,18 +126,29 @@ function LibraryItem({ item, onAdd }: { item: Item; onAdd: (item: Item) => void 
           </span>
         </div>
         <p className="text-xs font-medium text-white leading-snug truncate">{item.title}</p>
-        {item.summary && (
-          <p className="text-[10px] text-slate-500 line-clamp-1 mt-0.5">{item.summary}</p>
+        {(item.summary || item.snippet) && (
+          <p className="text-[10px] text-slate-500 line-clamp-2 mt-0.5">
+            {item.summary || item.snippet}
+          </p>
         )}
       </div>
 
-      <button
-        onClick={() => onAdd(item)}
-        className="nodrag shrink-0 opacity-0 group-hover:opacity-100 text-slate-400 hover:text-accent p-1 rounded transition-all"
-        title="Add to canvas"
-      >
-        <PlusSquare size={14} />
-      </button>
+      <div className="flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-all">
+        <button
+          onClick={e => { e.stopPropagation(); onAdd(item) }}
+          className="nodrag shrink-0 text-slate-400 hover:text-accent p-1 rounded transition-colors"
+          title="Add to canvas"
+        >
+          <PlusSquare size={14} />
+        </button>
+        <button
+          onClick={e => { e.stopPropagation(); onDelete() }}
+          className="nodrag shrink-0 text-slate-400 hover:text-red-400 p-1 rounded transition-colors"
+          title="Delete"
+        >
+          <Trash2 size={14} />
+        </button>
+      </div>
     </div>
   )
 }

@@ -16,6 +16,7 @@ export interface Item {
   source_url: string | null
   content_type: ContentType
   summary: string | null
+  snippet: string
   thumbnail: string | null
   tags: string[]
   meta: Record<string, unknown>
@@ -70,6 +71,8 @@ export interface MindMapItem {
   label: string
   content_type: ContentType
   thumbnail: string | null
+  summary?: string
+  snippet?: string
 }
 
 export interface MindMapEdge {

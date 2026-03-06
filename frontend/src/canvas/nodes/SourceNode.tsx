@@ -46,9 +46,9 @@ export function SourceNode({ data, selected }: NodeProps<SourceNodeData>) {
         {/* Title */}
         <p className="text-sm font-semibold text-white leading-snug line-clamp-2 mb-1">{item.title}</p>
 
-        {/* Summary */}
-        {item.summary && (
-          <p className="text-xs text-slate-400 line-clamp-2 mb-2">{item.summary}</p>
+        {/* Summary or snippet */}
+        {(item.summary || item.snippet) && (
+          <p className="text-xs text-slate-400 line-clamp-2 mb-2">{item.summary || item.snippet}</p>
         )}
 
         {/* Actions */}
