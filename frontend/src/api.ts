@@ -70,5 +70,28 @@ export const deletePage = (boardId: string, pageId: string) =>
 export const semanticSearch = (q: string, item_ids?: string[], n?: number) =>
   api.get<SearchResult[]>('/search', { params: { q, item_ids, n } }).then(r => r.data)
 
+// Settings
+export interface ProviderInfo {
+  base_url: string
+  sdk: string
+  models: string[]
+}
+
+export interface SettingsResponse {
+  provider: string
+  model: string
+  api_key_set: boolean
+  providers: Record<string, ProviderInfo>
+}
+
+export const getSettings = () =>
+  api.get<SettingsResponse>('/settings').then(r => r.data)
+
+export const saveSettings = (data: { provider: string; model: string; api_key: string }) =>
+  api.put<{ provider: string; model: string; api_key_set: boolean }>('/settings', data).then(r => r.data)
+
+export const testConnection = () =>
+  api.post<{ ok: boolean; error?: string }>('/settings/test').then(r => r.data)
+
 // WebSocket chat
 export const WS_CHAT_URL = `${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.host}/ws/chat`
