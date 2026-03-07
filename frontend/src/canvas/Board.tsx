@@ -20,6 +20,7 @@ import { categoryLayout, similarityLayout } from './layout'
 import { useBoard } from '../hooks/useBoard'
 import type { Item, SourceNodeData } from '../types'
 import { SemanticEdge } from './edges/SemanticEdge'
+import { SourceChatEdge } from './edges/SourceChatEdge'
 import { ChatNode } from './nodes/ChatNode'
 import { PageNode } from './nodes/PageNode'
 import { SourceNode } from './nodes/SourceNode'
@@ -33,6 +34,7 @@ const NODE_TYPES = {
 
 const EDGE_TYPES = {
   semantic: SemanticEdge,
+  'source-chat': SourceChatEdge,
 }
 
 interface Props {
@@ -45,6 +47,7 @@ export function Board({ }: Props) {
   const [edges, setEdges, onEdgesChange] = useEdgesState([])
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const organizeModeRef = useRef<string>('category')
+  const dismissedSemanticPairsRef = useRef<Set<string>>(new Set())
   const [similarityThreshold, setSimilarityThreshold] = useState<number>(0.3)
   const [organizeLabel, setOrganizeLabel] = useState<'category' | 'similarity'>('category')
   const { fitView } = useReactFlow()
@@ -86,9 +89,39 @@ export function Board({ }: Props) {
 
   const onConnect = useCallback(
     (connection: Connection) => {
-      const updated = addEdge({ ...connection, type: 'semantic' }, edges)
-      setEdges(updated)
-      scheduleSave(nodes, updated)
+      const fromNode = nodes.find(n => n.id === connection.source)
+      const toNode = nodes.find(n => n.id === connection.target)
+      const isSourceToChat = fromNode?.type === 'source' && toNode?.type === 'chat'
+      const isChatToSource = fromNode?.type === 'chat' && toNode?.type === 'source'
+
+      if (isSourceToChat || isChatToSource) {
+        const srcNode = isSourceToChat ? fromNode! : toNode!
+        const chatNode = isSourceToChat ? toNode! : fromNode!
+        const itemId = (srcNode.data as SourceNodeData).item.id
+
+        // Skip if already linked
+        const alreadyLinked = edges.some(
+          e => e.type === 'source-chat' &&
+            ((e.source === srcNode.id && e.target === chatNode.id) ||
+             (e.source === chatNode.id && e.target === srcNode.id))
+        )
+        if (alreadyLinked) return
+
+        setNodes(prev => prev.map(n => {
+          if (n.id !== chatNode.id) return n
+          const ids = n.data.item_ids as string[]
+          if (ids.includes(itemId)) return n
+          return { ...n, data: { ...n.data, item_ids: [...ids, itemId] } }
+        }))
+        const newEdge = { id: `sc-${srcNode.id}-${chatNode.id}`, source: srcNode.id, target: chatNode.id, type: 'source-chat' }
+        const updatedEdges = [...edges, newEdge]
+        setEdges(updatedEdges)
+        scheduleSave(nodes, updatedEdges)
+      } else {
+        const updated = addEdge({ ...connection, type: 'semantic' }, edges)
+        setEdges(updated)
+        scheduleSave(nodes, updated)
+      }
     },
     [edges, nodes]
   )
@@ -97,21 +130,63 @@ export function Board({ }: Props) {
   useEffect(() => {
     function onOpenChat(e: Event) {
       const { item_id } = (e as CustomEvent).detail
-      addChatNode([item_id])
+      const sourceNode = nodes.find(n => n.data?.item?.id === item_id)
+      addChatNode([item_id], sourceNode?.id)
     }
 
     function onRemoveNode(e: Event) {
       const { item_id } = (e as CustomEvent).detail
+      const removedNode = nodes.find(n => n.data?.item?.id === item_id)
       const updated = nodes.filter(n => n.data?.item?.id !== item_id)
+      const updatedEdges = removedNode
+        ? edges.filter(e => e.source !== removedNode.id && e.target !== removedNode.id)
+        : edges
       setNodes(updated)
-      scheduleSave(updated, edges)
+      setEdges(updatedEdges)
+      scheduleSave(updated, updatedEdges)
     }
 
     function onRemoveChatNode(e: Event) {
       const { node_id } = (e as CustomEvent).detail
       const updated = nodes.filter(n => n.id !== node_id)
+      const updatedEdges = edges.filter(e => e.source !== node_id && e.target !== node_id)
       setNodes(updated)
-      scheduleSave(updated, edges)
+      setEdges(updatedEdges)
+      scheduleSave(updated, updatedEdges)
+    }
+
+    function onRemoveSemanticEdge(e: Event) {
+      const { edge_id } = (e as CustomEvent).detail
+      // edge_id format: sem-${sourceItemId}-${targetItemId}
+      const pair = edge_id.slice(4) // strip "sem-"
+      dismissedSemanticPairsRef.current.add(pair)
+      dismissedSemanticPairsRef.current.add(pair.split('-').reverse().join('-'))
+      setEdges(prev => prev.filter(e => e.id !== edge_id))
+    }
+
+    function onRemoveSourceChatEdge(e: Event) {
+      const { edge_id } = (e as CustomEvent).detail
+      setEdges(prevEdges => {
+        const edge = prevEdges.find(e => e.id === edge_id)
+        const updatedEdges = prevEdges.filter(e => e.id !== edge_id)
+        if (edge) {
+          setNodes(prevNodes => {
+            const sourceNode = prevNodes.find(n => n.id === edge.source)
+            const itemId = (sourceNode?.data as SourceNodeData)?.item?.id
+            if (!itemId) {
+              scheduleSave(prevNodes, updatedEdges)
+              return prevNodes
+            }
+            const updatedNodes = prevNodes.map(n => {
+              if (n.id !== edge.target || n.type !== 'chat') return n
+              return { ...n, data: { ...n.data, item_ids: (n.data.item_ids as string[]).filter(id => id !== itemId) } }
+            })
+            scheduleSave(updatedNodes, updatedEdges)
+            return updatedNodes
+          })
+        }
+        return updatedEdges
+      })
     }
 
     function onSaveAsPage(e: Event) {
@@ -147,6 +222,8 @@ export function Board({ }: Props) {
     window.addEventListener('remove-chat-node', onRemoveChatNode)
     window.addEventListener('save-as-page', onSaveAsPage)
     window.addEventListener('item-deleted', onItemDeleted)
+    window.addEventListener('remove-semantic-edge', onRemoveSemanticEdge)
+    window.addEventListener('remove-source-chat-edge', onRemoveSourceChatEdge)
 
     return () => {
       window.removeEventListener('open-chat', onOpenChat)
@@ -154,8 +231,10 @@ export function Board({ }: Props) {
       window.removeEventListener('remove-chat-node', onRemoveChatNode)
       window.removeEventListener('save-as-page', onSaveAsPage)
       window.removeEventListener('item-deleted', onItemDeleted)
+      window.removeEventListener('remove-semantic-edge', onRemoveSemanticEdge)
+      window.removeEventListener('remove-source-chat-edge', onRemoveSourceChatEdge)
     }
-  }, [nodes, board?.id])
+  }, [nodes, edges, board?.id])
 
   // Public API for App to add items to canvas
   useEffect(() => {
@@ -178,7 +257,9 @@ export function Board({ }: Props) {
     }
 
     getItemSimilarities(itemIds, similarityThreshold).then(pairs => {
+      const dismissed = dismissedSemanticPairsRef.current
       const semanticEdges = pairs.flatMap(p => {
+        if (dismissed.has(`${p.source}-${p.target}`) || dismissed.has(`${p.target}-${p.source}`)) return []
         const sourceNode = sourceNodes.find(n => (n.data as SourceNodeData).item.id === p.source)
         const targetNode = sourceNodes.find(n => (n.data as SourceNodeData).item.id === p.target)
         if (!sourceNode || !targetNode) return []
@@ -265,17 +346,25 @@ export function Board({ }: Props) {
     return { x: maxX + NODE_W + PAD, y: 200 }
   }
 
-  function addChatNode(item_ids: string[] = []) {
+  function addChatNode(item_ids: string[] = [], sourceNodeId?: string) {
     const id = `chat-${Date.now()}`
+    const sourceNode = sourceNodeId ? nodes.find(n => n.id === sourceNodeId) : null
+    const position = sourceNode
+      ? { x: sourceNode.position.x + 360, y: sourceNode.position.y }
+      : { x: Math.random() * 300 + 100, y: Math.random() * 200 + 100 }
     const newNode: Node = {
       id,
       type: 'chat',
-      position: { x: Math.random() * 300 + 100, y: Math.random() * 200 + 100 },
+      position,
       data: { item_ids, messages: [], title: 'Chat' },
     }
-    const updated = [...nodes, newNode]
-    setNodes(updated)
-    scheduleSave(updated, edges)
+    const newEdges = sourceNodeId
+      ? [...edges, { id: `sc-${sourceNodeId}-${id}`, source: sourceNodeId, target: id, type: 'source-chat' }]
+      : edges
+    const updatedNodes = [...nodes, newNode]
+    setNodes(updatedNodes)
+    setEdges(newEdges)
+    scheduleSave(updatedNodes, newEdges)
   }
 
   async function handleOrganize() {

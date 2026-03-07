@@ -15,6 +15,7 @@ export function SettingsModal({ onClose }: Props) {
   const [testResult, setTestResult] = useState<{ ok: boolean; error?: string } | null>(null)
   const [organizeMode, setOrganizeMode] = useState('category')
   const [similarityThreshold, setSimilarityThreshold] = useState(0.3)
+  const [enableThinking, setEnableThinking] = useState(false)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
@@ -26,6 +27,7 @@ export function SettingsModal({ onClose }: Props) {
       setModel(d.model)
       setOrganizeMode(d.organize_mode)
       setSimilarityThreshold(d.similarity_threshold)
+      setEnableThinking(d.enable_thinking)
     })
   }, [])
 
@@ -49,7 +51,7 @@ export function SettingsModal({ onClose }: Props) {
     setTesting(true)
     setTestResult(null)
     try {
-      await saveSettings({ provider, model, api_key: apiKey, organize_mode: organizeMode, similarity_threshold: similarityThreshold })
+      await saveSettings({ provider, model, api_key: apiKey, organize_mode: organizeMode, similarity_threshold: similarityThreshold, enable_thinking: enableThinking })
       const result = await testConnection()
       setTestResult(result)
     } catch {
@@ -63,7 +65,7 @@ export function SettingsModal({ onClose }: Props) {
     setSaving(true)
     setSaveError(null)
     try {
-      await saveSettings({ provider, model, api_key: apiKey, organize_mode: organizeMode, similarity_threshold: similarityThreshold })
+      await saveSettings({ provider, model, api_key: apiKey, organize_mode: organizeMode, similarity_threshold: similarityThreshold, enable_thinking: enableThinking })
       window.dispatchEvent(new CustomEvent('settings-changed', { detail: { organize_mode: organizeMode, similarity_threshold: similarityThreshold } }))
       setSaved(true)
       setTimeout(() => setSaved(false), 2000)
@@ -174,6 +176,19 @@ export function SettingsModal({ onClose }: Props) {
                   <span>More connections</span>
                   <span>Fewer connections</span>
                 </div>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-medium text-slate-400">Enable reasoning</p>
+                  <p className="text-xs text-slate-600 mt-0.5">Lets the model think before responding. Slower but more accurate for complex questions.</p>
+                </div>
+                <button
+                  onClick={() => setEnableThinking(v => !v)}
+                  className={`relative ml-4 shrink-0 w-9 h-5 rounded-full transition-colors ${enableThinking ? 'bg-accent' : 'bg-surface-3'}`}
+                >
+                  <span className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${enableThinking ? 'translate-x-4' : 'translate-x-0'}`} />
+                </button>
               </div>
 
               {testResult && (

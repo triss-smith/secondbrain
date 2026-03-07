@@ -83,14 +83,15 @@ export interface SettingsResponse {
   api_key_set: boolean
   organize_mode: string
   similarity_threshold: number
+  enable_thinking: boolean
   providers: Record<string, ProviderInfo>
 }
 
 export const getSettings = () =>
   api.get<SettingsResponse>('/settings').then(r => r.data)
 
-export const saveSettings = (data: { provider: string; model: string; api_key: string; organize_mode: string; similarity_threshold: number }) =>
-  api.put<{ provider: string; model: string; api_key_set: boolean; organize_mode: string; similarity_threshold: number }>('/settings', data).then(r => r.data)
+export const saveSettings = (data: { provider: string; model: string; api_key: string; organize_mode: string; similarity_threshold: number; enable_thinking: boolean }) =>
+  api.put<{ provider: string; model: string; api_key_set: boolean; organize_mode: string; similarity_threshold: number; enable_thinking: boolean }>('/settings', data).then(r => r.data)
 
 export const testConnection = () =>
   api.post<{ ok: boolean; error?: string }>('/settings/test').then(r => r.data)

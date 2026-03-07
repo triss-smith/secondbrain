@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { EdgeLabelRenderer, getBezierPath, type EdgeProps } from 'reactflow'
 
-export function SemanticEdge({
+export function SourceChatEdge({
   id,
   sourceX,
   sourceY,
@@ -9,7 +9,6 @@ export function SemanticEdge({
   targetY,
   sourcePosition,
   targetPosition,
-  data,
 }: EdgeProps) {
   const [hovered, setHovered] = useState(false)
   const [edgePath, labelX, labelY] = getBezierPath({
@@ -21,20 +20,17 @@ export function SemanticEdge({
     targetPosition,
   })
 
-  const similarity = data?.similarity as number | undefined
-
   function handleDelete() {
-    window.dispatchEvent(new CustomEvent('remove-semantic-edge', { detail: { edge_id: id } }))
+    window.dispatchEvent(new CustomEvent('remove-source-chat-edge', { detail: { edge_id: id } }))
   }
 
   return (
     <>
       <path
         d={edgePath}
-        stroke="#7c6af7"
-        strokeOpacity={similarity ? 0.2 + similarity * 0.6 : 0.3}
-        strokeDasharray="4 3"
+        stroke="#34d399"
         strokeWidth={1.5}
+        strokeOpacity={0.6}
         fill="none"
       />
       <path
@@ -48,15 +44,10 @@ export function SemanticEdge({
       <EdgeLabelRenderer>
         <div
           style={{ transform: `translate(-50%, -50%) translate(${labelX}px,${labelY}px)` }}
-          className="absolute flex items-center gap-1"
+          className="absolute"
           onMouseEnter={() => setHovered(true)}
           onMouseLeave={() => setHovered(false)}
         >
-          {similarity && similarity > 0.75 && (
-            <span className="text-[9px] text-slate-500 bg-surface-1 px-1 rounded pointer-events-none">
-              {Math.round(similarity * 100)}%
-            </span>
-          )}
           {hovered && (
             <button
               onClick={handleDelete}

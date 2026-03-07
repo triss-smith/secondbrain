@@ -12,6 +12,7 @@ class SaveSettingsRequest(BaseModel):
     api_key: str
     organize_mode: str = "category"
     similarity_threshold: float = 0.3
+    enable_thinking: bool = False
 
 
 @router.get("")
@@ -23,6 +24,7 @@ def get_settings():
         "api_key_set": bool(s.api_key),
         "organize_mode": s.organize_mode,
         "similarity_threshold": s.similarity_threshold,
+        "enable_thinking": s.enable_thinking,
         "providers": PROVIDERS,
     }
 
@@ -40,9 +42,9 @@ def save_settings(req: SaveSettingsRequest):
         raise HTTPException(status_code=400, detail="similarity_threshold must be between 0.0 and 1.0")
     # Preserve existing key if client sends empty string (user didn't re-enter it)
     api_key = req.api_key if req.api_key else settings_manager.get().api_key
-    settings_manager.save(req.provider, req.model, api_key, req.organize_mode, req.similarity_threshold)
+    settings_manager.save(req.provider, req.model, api_key, req.organize_mode, req.similarity_threshold, req.enable_thinking)
     s = settings_manager.get()
-    return {"provider": s.provider, "model": s.model, "api_key_set": bool(s.api_key), "organize_mode": s.organize_mode, "similarity_threshold": s.similarity_threshold}
+    return {"provider": s.provider, "model": s.model, "api_key_set": bool(s.api_key), "organize_mode": s.organize_mode, "similarity_threshold": s.similarity_threshold, "enable_thinking": s.enable_thinking}
 
 
 @router.post("/test")

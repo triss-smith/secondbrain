@@ -36,6 +36,8 @@ async def chat_stream(messages: list[dict], system: str | None = None) -> AsyncI
             "stream": True,
             "max_tokens": 2048,
         }
+        if not s.enable_thinking:
+            payload["thinking"] = {"type": "disabled"}
         async with httpx.AsyncClient(timeout=120) as client:
             async with client.stream(
                 "POST",
@@ -59,6 +61,44 @@ async def chat_stream(messages: list[dict], system: str | None = None) -> AsyncI
                             yield delta
                     except (json.JSONDecodeError, KeyError, IndexError):
                         continue
+
+
+async def strip_think_tags(source: AsyncIterator[str]) -> AsyncIterator[str]:
+    """Strip <think>...</think> blocks from a streaming token source."""
+    in_think = False
+    pending = ""
+
+    async for chunk in source:
+        pending += chunk
+        result = ""
+
+        while True:
+            if in_think:
+                idx = pending.find("</think>")
+                if idx >= 0:
+                    pending = pending[idx + 8:]
+                    in_think = False
+                else:
+                    pending = pending[-8:] if len(pending) > 8 else pending
+                    break
+            else:
+                idx = pending.find("<think>")
+                if idx >= 0:
+                    result += pending[:idx]
+                    pending = pending[idx + 7:]
+                    in_think = True
+                else:
+                    safe = len(pending) - 7
+                    if safe > 0:
+                        result += pending[:safe]
+                        pending = pending[safe:]
+                    break
+
+        if result:
+            yield result
+
+    if not in_think and pending:
+        yield pending
 
 
 async def chat(messages: list[dict], system: str | None = None) -> str:

@@ -13,8 +13,8 @@ BACKUP_PATH = _PROJECT_ROOT / "data" / "config.json.bak"
 
 PROVIDERS = {
     "minimax": {
-        "base_url": "https://api.minimax.io/anthropic",
-        "sdk": "anthropic",
+        "base_url": "https://api.minimax.io/v1",
+        "sdk": "openai",
         "models": ["MiniMax-M2.5", "MiniMax-M2.5-highspeed"],
     },
     "anthropic": {
@@ -42,6 +42,7 @@ class AISettings:
     api_key: str
     organize_mode: str = "category"
     similarity_threshold: float = 0.3
+    enable_thinking: bool = False
 
 
 class SettingsManager:
@@ -58,6 +59,7 @@ class SettingsManager:
                     api_key=data.get("api_key", ""),
                     organize_mode=data.get("organize_mode", "category"),
                     similarity_threshold=float(data.get("similarity_threshold", 0.3)),
+                    enable_thinking=bool(data.get("enable_thinking", False)),
                 )
             except Exception as exc:
                 logger.warning("Failed to load %s, falling back to env defaults: %s", CONFIG_PATH, exc)
@@ -71,7 +73,7 @@ class SettingsManager:
     def get(self) -> AISettings:
         return self._settings
 
-    def save(self, provider: str, model: str, api_key: str, organize_mode: str = "category", similarity_threshold: float = 0.3) -> None:
+    def save(self, provider: str, model: str, api_key: str, organize_mode: str = "category", similarity_threshold: float = 0.3, enable_thinking: bool = False) -> None:
         if provider not in PROVIDERS:
             raise ValueError(f"Unknown provider '{provider}'. Valid: {list(PROVIDERS)}")
         if organize_mode not in ("category", "similarity"):
@@ -88,9 +90,10 @@ class SettingsManager:
             "api_key": api_key,
             "organize_mode": organize_mode,
             "similarity_threshold": similarity_threshold,
+            "enable_thinking": enable_thinking,
         }, indent=2))
         tmp.replace(CONFIG_PATH)
-        self._settings = AISettings(provider=provider, model=model, api_key=api_key, organize_mode=organize_mode, similarity_threshold=similarity_threshold)
+        self._settings = AISettings(provider=provider, model=model, api_key=api_key, organize_mode=organize_mode, similarity_threshold=similarity_threshold, enable_thinking=enable_thinking)
 
 
 settings_manager = SettingsManager()
