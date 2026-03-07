@@ -213,6 +213,7 @@ export function Board({ }: Props) {
     const NODE_W = 300
     const NODE_H = 220
     const PAD = 50
+    const NODES_PER_ROW = 4
 
     if (sourceNodes.length === 0) {
       return { x: 200, y: 200 }
@@ -238,18 +239,26 @@ export function Board({ }: Props) {
       }
     }
 
-    // Category placement (default + similarity fallback)
+    // Category placement: grid layout within same-category group
     const category = item.category ?? ''
     const sameCategory = category
       ? sourceNodes.filter(n => (n.data as SourceNodeData).item.category === category)
       : []
-    const group = sameCategory.length > 0 ? sameCategory : sourceNodes
 
-    const cx = group.reduce((s, n) => s + n.position.x, 0) / group.length
-    const cy = group.reduce((s, n) => s + n.position.y, 0) / group.length
+    if (sameCategory.length > 0) {
+      const col = sameCategory.length % NODES_PER_ROW
+      const row = Math.floor(sameCategory.length / NODES_PER_ROW)
+      const minX = Math.min(...sameCategory.map(n => n.position.x))
+      const minY = Math.min(...sameCategory.map(n => n.position.y))
+      return {
+        x: minX + col * (NODE_W + PAD),
+        y: minY + row * (NODE_H + PAD),
+      }
+    }
 
-    const offset = (sourceNodes.length % 3) * (NODE_W + PAD)
-    return { x: cx + NODE_W + PAD + offset, y: cy + (sourceNodes.length % 2) * (NODE_H + PAD) }
+    // No same-category nodes: place to the right of all existing nodes
+    const maxX = Math.max(...sourceNodes.map(n => n.position.x))
+    return { x: maxX + NODE_W + PAD, y: 200 }
   }
 
   function addChatNode(item_ids: string[] = []) {
