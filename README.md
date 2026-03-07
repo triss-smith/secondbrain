@@ -1,56 +1,89 @@
+<div align="center">
+
 # Second Brain
 
-A local, self-hosted knowledge base with an infinite canvas interface. Save anything — YouTube videos, TikToks, articles, PDFs, podcasts, GitHub repos — then chat with your knowledge using AI.
+**A self-hosted, AI-powered knowledge base with an infinite canvas interface.**
 
-![Stack](https://img.shields.io/badge/Backend-FastAPI-009688?style=flat-square&logo=fastapi)
-![Stack](https://img.shields.io/badge/Frontend-React%20%2B%20React%20Flow-61DAFB?style=flat-square&logo=react)
-![Stack](https://img.shields.io/badge/AI-MiniMax-7c6af7?style=flat-square)
-![Stack](https://img.shields.io/badge/Storage-SQLite%20%2B%20ChromaDB-003B57?style=flat-square)
+Save anything. Find anything. Think in connections.
+
+[![Backend](https://img.shields.io/badge/Backend-FastAPI-009688?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
+[![Frontend](https://img.shields.io/badge/Frontend-React%20%2B%20TypeScript-61DAFB?style=flat-square&logo=react&logoColor=black)](https://react.dev)
+[![Canvas](https://img.shields.io/badge/Canvas-React%20Flow-7c6af7?style=flat-square)](https://reactflow.dev)
+[![Storage](https://img.shields.io/badge/Storage-SQLite%20%2B%20ChromaDB-003B57?style=flat-square)](https://www.trychroma.com)
+[![License](https://img.shields.io/badge/License-MIT-22c55e?style=flat-square)](LICENSE)
+
+</div>
+
+---
+
+## What is Second Brain?
+
+Second Brain is a local knowledge management tool that lets you ingest content from anywhere — YouTube, TikTok, articles, PDFs, podcasts, GitHub repos — and interact with it through AI-powered chat, semantic search, and an infinite spatial canvas.
+
+Everything runs on your machine. Your data stays yours.
 
 ---
 
 ## Features
 
-- **Infinite Canvas** — drag, arrange, and connect knowledge nodes on a spatial board powered by React Flow
-- **Multi-source Ingestion** — paste a URL or upload a file; the app handles the rest
-- **AI Chat** — ask questions across your entire knowledge base or scoped to specific items, with streaming responses
-- **Semantic Search** — find content by meaning, not just keywords
-- **Auto-tagging & Summaries** — every item is automatically tagged and summarised on ingest
-- **Mind Map** — auto-generated graph of semantically related items
-- **Saved Pages** — convert any chat conversation into a persistent note on the canvas
-- **Fully Local** — your data never leaves your machine (except AI API calls)
-- **Mobile Accessible** — runs on your local network, accessible from any device on the same Wi-Fi
+### Knowledge Capture
+- **10 content types** — paste a URL or upload a file; the right extractor runs automatically
+- **TikTok & Instagram** — captions extracted via yt-dlp; falls back to Whisper transcription when captions aren't available
+- **Podcast transcription** — local Whisper model, no cloud required
+- **PDF, GitHub, Google Docs** — full text extraction and indexing
+
+### AI-Powered Understanding
+- **Auto-tagging & categorization** — every item is automatically tagged, categorized, and summarized on ingest
+- **Resummarize** — refresh any item's summary and tags on demand
+- **Multi-provider AI** — bring your own key for MiniMax, Anthropic, OpenAI, or Gemini; switch providers without restarting
+- **Streaming chat** — ask questions across your entire knowledge base with real-time streamed answers
+- **RAG pipeline** — responses grounded in your actual content via ChromaDB semantic retrieval
+
+### Infinite Canvas
+- **Spatial thinking** — drag source nodes, chat windows, and pages onto an infinite board
+- **Automatic semantic edges** — canvas items connect to each other automatically based on embedding similarity; no manual linking required
+- **Chat nodes** — floating chat windows you can pin to specific source nodes to scope the AI's context
+- **Page nodes** — save any conversation as a persistent, editable note on the canvas
+
+### Library & Navigation
+- **Grouped library** — items organized into AI-generated categories, collapsed by default for a clean view
+- **Semantic search** — find content by meaning, not just keywords
+- **Inline tag editing** — add or remove tags on any item directly from the detail panel
+
+### Settings & Configuration
+- **In-app settings** — configure your AI provider, model, and API key from the UI; no `.env` editing required
+- **Automatic backup** — settings are saved to `data/config.json` with automatic `.bak` backup before every write
+- **Connection testing** — test your API credentials before saving
 
 ---
 
 ## Supported Content Types
 
-| Type | How |
+| Type | Extraction Method |
 |---|---|
-| YouTube | Transcript via `youtube-transcript-api` + metadata via `yt-dlp` |
-| TikTok | Captions + metadata via `yt-dlp` |
+| YouTube | Transcript via `youtube-transcript-api` · metadata via `yt-dlp` |
+| TikTok | Captions via `yt-dlp` · Whisper audio fallback |
 | Instagram Reels | Caption + metadata via `yt-dlp` |
-| Podcasts | Audio download + local Whisper transcription |
-| Articles / Web pages | Clean text extraction via `trafilatura` |
+| Podcasts | Audio download via `yt-dlp` · local Whisper transcription |
+| Articles & Web Pages | Clean text extraction via `trafilatura` |
 | PDFs | Text extraction via `PyMuPDF` |
 | GitHub Repositories | Clones repo, indexes README + source files |
-| Google Docs | Google Drive API (requires one-time OAuth setup) |
+| Google Docs | Google Drive API (one-time OAuth setup) |
 | LinkedIn Posts | Paste content directly (scraping blocked by LinkedIn) |
 | Plain Notes | Type or paste any text |
 
 ---
 
-## Tech Stack
+## Supported AI Providers
 
-```
-Backend          Python · FastAPI · SQLAlchemy · SQLite
-Vector Store     ChromaDB
-Embeddings       sentence-transformers (all-MiniLM-L6-v2, runs locally)
-AI               MiniMax API (chat completions + streaming)
-Frontend         React 18 · TypeScript · Vite · Tailwind CSS
-Canvas           React Flow
-Transcription    OpenAI Whisper (local)
-```
+Configure your preferred provider from the in-app settings panel. No restart required.
+
+| Provider | Models | SDK |
+|---|---|---|
+| **MiniMax** | MiniMax-M2.5, MiniMax-M2.5-highspeed | Anthropic-compatible |
+| **Anthropic** | claude-opus-4-6, claude-sonnet-4-6 | Anthropic SDK |
+| **OpenAI** | gpt-4o, gpt-4o-mini | OpenAI-compatible |
+| **Gemini** | gemini-2.0-flash, gemini-1.5-pro | OpenAI-compatible |
 
 ---
 
@@ -58,10 +91,12 @@ Transcription    OpenAI Whisper (local)
 
 ### Prerequisites
 
-- Python 3.10+
-- Node.js 18+
-- [ffmpeg](https://ffmpeg.org/download.html) (required for podcast audio)
-- A [MiniMax API key](https://www.minimaxi.com)
+| Requirement | Notes |
+|---|---|
+| Python 3.12 | Earlier versions untested |
+| Node.js 18+ | For the frontend |
+| ffmpeg | Required for podcast and TikTok audio transcription |
+| An AI API key | Any supported provider — configure in-app after setup |
 
 ### 1. Clone & configure
 
@@ -70,8 +105,9 @@ git clone https://github.com/triss-smith/mysecondbrain.git
 cd mysecondbrain
 
 cp .env.example .env
-# Open .env and add your MINIMAX_API_KEY
 ```
+
+`.env` is only needed for first-run fallback. Once you save settings in the UI, `data/config.json` takes over and `.env` is no longer read.
 
 ### 2. Install dependencies
 
@@ -85,7 +121,7 @@ cd frontend && npm install && cd ..
 
 ### 3. Run
 
-**Windows:**
+**Windows (recommended):**
 ```
 start.bat
 ```
@@ -93,28 +129,79 @@ start.bat
 **Manual (two terminals):**
 ```bash
 # Terminal 1 — backend
-uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload
+py -3.12 -m uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload
 
 # Terminal 2 — frontend
 cd frontend && npm run dev
 ```
 
-Open `http://localhost:5173` in your browser.
+Open **http://localhost:5173** in your browser.
 
-**From your phone:** find your machine's local IP (`ipconfig` on Windows, `ifconfig` on Mac/Linux) and open `http://192.168.x.x:5173`.
+### 4. Configure your AI provider
+
+Click the **⚙ gear icon** next to "Second Brain" in the sidebar. Select your provider, choose a model, paste your API key, and click **Test Connection** to verify — then **Save**.
+
+> **First run:** the local embedding model (~90 MB) downloads automatically and is cached. Whisper (~150 MB) downloads on first podcast or TikTok ingest.
+
+### Access from other devices
+
+Find your machine's local IP (`ipconfig` on Windows, `ifconfig` on Mac/Linux) and open `http://192.168.x.x:5173` from any device on the same network.
 
 ---
 
 ## Docker
 
 ```bash
-cp .env.example .env   # add your MINIMAX_API_KEY
+cp .env.example .env   # add a fallback API key if desired
 
 docker-compose up
 ```
 
-Frontend → `http://localhost:5173`
-Backend API → `http://localhost:8000`
+| Service | URL |
+|---|---|
+| App | http://localhost:5173 |
+| Backend API | http://localhost:8000 |
+
+---
+
+## How It Works
+
+```
+1. Paste a URL or upload a file
+         ↓
+2. Backend detects content type → routes to the correct ingestor
+   (yt-dlp, Whisper, trafilatura, PyMuPDF, gitpython, etc.)
+         ↓
+3. Raw content extracted (transcript, article text, PDF pages, etc.)
+         ↓
+4. AI generates tags, a category, and a summary
+   sentence-transformers embeds chunked text → stored in ChromaDB
+   Metadata + content saved to SQLite
+         ↓
+5. Item appears in the Library sidebar, grouped by category
+   Drag it onto the infinite canvas as a Source node
+         ↓
+6. Semantic edges appear automatically between related Source nodes
+         ↓
+7. Open a Chat node, optionally pin Source nodes to scope context
+         ↓
+8. Ask a question → top-K chunks retrieved from ChromaDB
+   → AI synthesises a grounded answer, streamed back live
+         ↓
+9. Save the conversation as a Page node on the canvas
+```
+
+---
+
+## Canvas Node Types
+
+| Node | Description |
+|---|---|
+| **Source** | A saved knowledge item — thumbnail, type badge, tags, summary, and a resummarize button |
+| **Chat** | Floating chat window; pin Source nodes to scope the AI's knowledge to specific items |
+| **Page** | Editable rich-text note; created automatically when you save a conversation |
+
+Semantic edges between Source nodes are drawn automatically — no configuration needed. Edge weight reflects embedding similarity; unrelated items stay disconnected.
 
 ---
 
@@ -124,21 +211,21 @@ Backend API → `http://localhost:8000`
 second-brain/
 ├── backend/
 │   ├── main.py              # FastAPI app entry point
-│   ├── config.py            # Settings (reads .env)
+│   ├── config.py            # Pydantic settings (reads .env)
 │   ├── api/
-│   │   ├── items.py         # Ingest + CRUD for knowledge items
-│   │   ├── boards.py        # Canvas board + pages CRUD, mind map
+│   │   ├── items.py         # Ingest + CRUD + auto-tag/summarize
+│   │   ├── boards.py        # Canvas board + pages CRUD
 │   │   ├── chat.py          # WebSocket streaming chat
-│   │   └── search.py        # Semantic search
+│   │   ├── search.py        # Semantic search
+│   │   └── settings.py      # AI provider settings (GET / PUT / test)
 │   ├── ai/
+│   │   ├── client.py        # Unified AI client (Anthropic SDK + httpx)
 │   │   ├── embed.py         # Local sentence-transformers embeddings
-│   │   ├── minimax.py       # MiniMax API client (chat + streaming)
-│   │   ├── query.py         # RAG pipeline
-│   │   └── mindmap.py       # Cosine similarity graph
+│   │   └── query.py         # RAG pipeline
 │   ├── ingest/
 │   │   ├── base.py          # URL type detection + routing
 │   │   ├── youtube.py
-│   │   ├── tiktok.py
+│   │   ├── tiktok.py        # yt-dlp + Whisper fallback
 │   │   ├── instagram.py
 │   │   ├── podcast.py       # yt-dlp + Whisper
 │   │   ├── article.py       # trafilatura
@@ -147,26 +234,37 @@ second-brain/
 │   │   ├── gdocs.py         # Google Drive API
 │   │   └── linkedin.py      # Paste-based
 │   └── store/
-│       ├── db.py            # SQLite models (Items, Chunks, Boards, Pages)
-│       └── vectors.py       # ChromaDB operations
+│       ├── db.py            # SQLite models (Items, Boards, Pages)
+│       ├── vectors.py       # ChromaDB operations
+│       └── settings.py      # SettingsManager — config.json persistence
 │
 ├── frontend/
 │   └── src/
-│       ├── App.tsx          # Root layout
-│       ├── api.ts           # All API calls
-│       ├── types.ts         # Shared TypeScript types
+│       ├── App.tsx              # Root layout + settings gear icon
+│       ├── api.ts               # All API calls
+│       ├── types.ts             # Shared TypeScript types
 │       ├── canvas/
-│       │   ├── Board.tsx    # React Flow infinite canvas
-│       │   ├── Toolbar.tsx  # Canvas action buttons
-│       │   ├── nodes/       # SourceNode, ChatNode, PageNode, MindMapNode
-│       │   └── edges/       # SemanticEdge
+│       │   ├── Board.tsx        # React Flow canvas + auto semantic edges
+│       │   ├── nodes/           # SourceNode, ChatNode, PageNode
+│       │   └── edges/           # SemanticEdge
 │       ├── sidebar/
-│       │   ├── Library.tsx  # Searchable item list
-│       │   └── CaptureBar.tsx  # URL / note / file input
+│       │   ├── Library.tsx      # Category-grouped item list
+│       │   └── CaptureBar.tsx   # URL / note / file input
+│       ├── components/
+│       │   ├── SettingsModal.tsx # Provider / model / API key config
+│       │   ├── NoteModal.tsx     # Full-screen note input
+│       │   ├── GlobalChat.tsx    # Sidebar-docked global chat
+│       │   └── ItemDetailModal.tsx # Item detail + tag editing
 │       └── hooks/
-│           ├── useChat.ts   # WebSocket chat state
-│           ├── useIngest.ts # Ingest submission + status
-│           └── useBoard.ts  # Board load/save
+│           ├── useChat.ts       # WebSocket chat state
+│           ├── useIngest.ts     # Ingest submission + status
+│           └── useBoard.ts      # Board load/save
+│
+├── data/                    # Runtime data (gitignored)
+│   ├── brain.db             # SQLite database
+│   ├── chroma/              # ChromaDB vector store
+│   ├── uploads/             # Uploaded files
+│   └── config.json          # AI provider settings
 │
 ├── .env.example
 ├── requirements.txt
@@ -176,74 +274,48 @@ second-brain/
 
 ---
 
-## How It Works
-
-```
-1. You paste a URL or upload a file
-         ↓
-2. Backend detects content type → routes to correct ingestor
-         ↓
-3. Content extracted (transcript, article text, PDF pages, etc.)
-         ↓
-4. MiniMax generates tags + summary
-   sentence-transformers embeds chunked text → stored in ChromaDB
-   Metadata saved to SQLite
-         ↓
-5. Source node appears in your Library sidebar
-   Drag it onto the infinite canvas
-         ↓
-6. Open a Chat node, pin source nodes to it
-         ↓
-7. Ask a question → top-K relevant chunks retrieved from ChromaDB
-   → MiniMax synthesises a grounded answer, streamed back live
-         ↓
-8. Save the conversation as a Page node on the canvas
-```
-
----
-
-## Canvas Node Types
-
-| Node | Description |
-|---|---|
-| **Source** | A saved knowledge item — shows thumbnail, type, tags, summary |
-| **Chat** | Floating chat window; pin sources to scope the AI's knowledge |
-| **Page** | Editable text note; auto-created from saved chat conversations |
-| **Mind Map** | SVG graph of all items connected by semantic similarity |
-
----
-
 ## Google Docs Setup
 
 1. Create a project in [Google Cloud Console](https://console.cloud.google.com)
 2. Enable the **Google Docs API** and **Google Drive API**
-3. Create OAuth 2.0 credentials (Desktop app)
-4. Download the credentials JSON to `data/google_credentials.json`
-5. On first use, visit `/api/auth/google` to complete the OAuth flow — this saves a token to `data/google_token.json`
+3. Create OAuth 2.0 credentials (Desktop app type)
+4. Download the credentials JSON → save as `data/google_credentials.json`
+5. On first use, visit `/api/auth/google` to complete the OAuth flow — the token is saved to `data/google_token.json` automatically
 
 ---
 
 ## Environment Variables
 
+`.env` values serve as fallback defaults. Settings saved via the UI always take precedence.
+
 | Variable | Required | Default | Description |
 |---|---|---|---|
-| `MINIMAX_API_KEY` | Yes | — | MiniMax API key |
-| `MINIMAX_BASE_URL` | No | `https://api.minimax.chat/v1` | MiniMax base URL |
-| `MINIMAX_MODEL` | No | `MiniMax-Text-01` | Model to use |
-| `EMBED_MODEL` | No | `all-MiniLM-L6-v2` | sentence-transformers model |
+| `MINIMAX_API_KEY` | No¹ | — | Fallback API key (any provider key works here) |
+| `MINIMAX_MODEL` | No | `MiniMax-M2.5` | Fallback model name |
+| `EMBED_MODEL` | No | `all-MiniLM-L6-v2` | Local sentence-transformers model |
 | `DB_PATH` | No | `data/brain.db` | SQLite database path |
 | `CHROMA_PATH` | No | `data/chroma` | ChromaDB storage path |
 | `UPLOADS_PATH` | No | `data/uploads` | Uploaded file storage |
 | `HOST` | No | `0.0.0.0` | Backend bind host |
 | `PORT` | No | `8000` | Backend port |
-| `GOOGLE_CLIENT_ID` | No | — | For Google Docs ingestion |
-| `GOOGLE_CLIENT_SECRET` | No | — | For Google Docs ingestion |
+| `GOOGLE_CLIENT_ID` | No | — | Google Docs ingestion |
+| `GOOGLE_CLIENT_SECRET` | No | — | Google Docs ingestion |
+
+¹ Required only before you configure a provider via the in-app settings panel.
+
+---
+
+## Data & Privacy
+
+- **All storage is local** — SQLite database and ChromaDB vector store live in `data/` on your machine
+- **Embeddings run locally** — sentence-transformers never sends data to an external service
+- **AI API calls** — only the text you submit for chat or tagging is sent to your chosen AI provider
+- **No telemetry** — no analytics, no tracking, no phone-home
 
 ---
 
 ## Notes
 
-- **First run**: the embedding model (~90 MB) downloads automatically and is cached locally
-- **Whisper**: the `base` model (~150 MB) downloads on first podcast ingest
-- **Data privacy**: all embeddings and storage are local; only the text sent to MiniMax for chat/tagging leaves your machine
-- **LinkedIn**: automated ingestion is not possible due to anti-scraping measures — paste post content directly as a note
+- **LinkedIn** — automated ingestion is blocked by LinkedIn's anti-scraping measures; paste post content directly as a note instead
+- **Whisper models** — the `base` model is used by default (~150 MB, downloads on first use); larger models give better accuracy but are slower
+- **Google Docs** — requires a one-time OAuth browser flow; subsequent ingests use a cached token
