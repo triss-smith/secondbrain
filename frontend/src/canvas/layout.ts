@@ -28,19 +28,30 @@ export function categoryLayout(sourceNodes: Node[]): Node[] {
 
   // Arrange groups in a grid (roughly square)
   const GROUPS_PER_ROW = Math.ceil(Math.sqrt(sorted.length))
+
+  // Compute per-group block heights, then derive the max height per grid row
+  // so that groups in the same row never overlap vertically.
+  const blockHeights = sorted.map(([, nodes]) =>
+    Math.ceil(nodes.length / NODES_PER_ROW) * (NODE_H + GAP_Y) + 36
+  )
+  const rowHeights: number[] = []
+  sorted.forEach((_, gi) => {
+    const gr = Math.floor(gi / GROUPS_PER_ROW)
+    rowHeights[gr] = Math.max(rowHeights[gr] ?? 0, blockHeights[gi])
+  })
+  const rowOriginY = rowHeights.reduce<number[]>((acc, h, i) => {
+    acc.push(i === 0 ? 0 : acc[i - 1] + h + GROUP_PAD)
+    return acc
+  }, [])
+
+  const blockW = NODES_PER_ROW * (NODE_W + GAP_X)
   const result: Node[] = []
 
   sorted.forEach(([, nodes], gi) => {
     const groupCol = gi % GROUPS_PER_ROW
     const groupRow = Math.floor(gi / GROUPS_PER_ROW)
-
-    // Size of a full-row group block
-    const blockW = NODES_PER_ROW * (NODE_W + GAP_X)
-    const maxRows = Math.ceil(nodes.length / NODES_PER_ROW)
-    const blockH = maxRows * (NODE_H + GAP_Y) + 36 // 36px for category label
-
     const originX = groupCol * (blockW + GROUP_PAD)
-    const originY = groupRow * (blockH + GROUP_PAD)
+    const originY = rowOriginY[groupRow]
 
     nodes.forEach((node, i) => {
       const col = i % NODES_PER_ROW
@@ -147,9 +158,10 @@ export function similarityLayout(
   // Re-center around a sensible canvas origin
   const cx = pos.reduce((s, p) => s + p.x, 0) / pos.length
   const cy = pos.reduce((s, p) => s + p.y, 0) / pos.length
+  const posById = new Map(pos.map(p => [p.id, p]))
 
   return sourceNodes.map(node => {
-    const p = pos.find(p => p.id === node.id)!
+    const p = posById.get(node.id)!
     return { ...node, position: { x: p.x - cx + 800, y: p.y - cy + 500 } }
   })
 }
