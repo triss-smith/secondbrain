@@ -205,72 +205,27 @@ Semantic edges between Source nodes are drawn automatically — no configuration
 
 ---
 
-## Project Structure
+## Screenshots
 
-```
-second-brain/
-├── backend/
-│   ├── main.py              # FastAPI app entry point
-│   ├── config.py            # Pydantic settings (reads .env)
-│   ├── api/
-│   │   ├── items.py         # Ingest + CRUD + auto-tag/summarize
-│   │   ├── boards.py        # Canvas board + pages CRUD
-│   │   ├── chat.py          # WebSocket streaming chat
-│   │   ├── search.py        # Semantic search
-│   │   └── settings.py      # AI provider settings (GET / PUT / test)
-│   ├── ai/
-│   │   ├── client.py        # Unified AI client (Anthropic SDK + httpx)
-│   │   ├── embed.py         # Local sentence-transformers embeddings
-│   │   └── query.py         # RAG pipeline
-│   ├── ingest/
-│   │   ├── base.py          # URL type detection + routing
-│   │   ├── youtube.py
-│   │   ├── tiktok.py        # yt-dlp + Whisper fallback
-│   │   ├── instagram.py
-│   │   ├── podcast.py       # yt-dlp + Whisper
-│   │   ├── article.py       # trafilatura
-│   │   ├── pdf.py           # PyMuPDF
-│   │   ├── github.py        # git clone + file indexing
-│   │   ├── gdocs.py         # Google Drive API
-│   │   └── linkedin.py      # Paste-based
-│   └── store/
-│       ├── db.py            # SQLite models (Items, Boards, Pages)
-│       ├── vectors.py       # ChromaDB operations
-│       └── settings.py      # SettingsManager — config.json persistence
-│
-├── frontend/
-│   └── src/
-│       ├── App.tsx              # Root layout + settings gear icon
-│       ├── api.ts               # All API calls
-│       ├── types.ts             # Shared TypeScript types
-│       ├── canvas/
-│       │   ├── Board.tsx        # React Flow canvas + auto semantic edges
-│       │   ├── nodes/           # SourceNode, ChatNode, PageNode
-│       │   └── edges/           # SemanticEdge
-│       ├── sidebar/
-│       │   ├── Library.tsx      # Category-grouped item list
-│       │   └── CaptureBar.tsx   # URL / note / file input
-│       ├── components/
-│       │   ├── SettingsModal.tsx # Provider / model / API key config
-│       │   ├── NoteModal.tsx     # Full-screen note input
-│       │   ├── GlobalChat.tsx    # Sidebar-docked global chat
-│       │   └── ItemDetailModal.tsx # Item detail + tag editing
-│       └── hooks/
-│           ├── useChat.ts       # WebSocket chat state
-│           ├── useIngest.ts     # Ingest submission + status
-│           └── useBoard.ts      # Board load/save
-│
-├── data/                    # Runtime data (gitignored)
-│   ├── brain.db             # SQLite database
-│   ├── chroma/              # ChromaDB vector store
-│   ├── uploads/             # Uploaded files
-│   └── config.json          # AI provider settings
-│
-├── .env.example
-├── requirements.txt
-├── docker-compose.yml
-└── start.bat
-```
+### Library & Capture
+<!-- Screenshot: full app window. Sidebar on the left showing 2–3 expanded category groups (e.g. "Cooking", "Software Engineering") each with 2–3 items. Each item shows its thumbnail, source badge (TikTok/YouTube/Article), title, and a one-line summary snippet. The semantic search bar is visible at the top of the sidebar. The URL input field at the bottom of the sidebar is empty and ready to use, with the "Note" and "File" buttons beside it. The canvas in the background is visible but unfocused. -->
+![Library & Capture](.github/screenshots/library.png)
+
+### Infinite Canvas
+<!-- Screenshot: the full canvas view (no sidebar, or sidebar collapsed). 4–6 Source nodes visible — each showing a thumbnail image, a coloured source badge (e.g. TikTok, YouTube), 2–3 tag pills, and a short summary. Dashed purple lines connect related nodes, with varying opacity (brighter = more similar). At least one pair of nodes should have a "%" similarity label on the edge. The toolbar is visible at the top-centre with the Chat, Organize, and zoom buttons. The MiniMap is in the bottom-right corner. -->
+![Infinite Canvas](.github/screenshots/canvas.png)
+
+### Smart Node Placement & Auto-Connections
+<!-- Screenshot: canvas zoomed in to show two groups of nodes clearly separated by category. For example, 3 Cooking nodes arranged in a tight horizontal row, connected by bright dashed purple edges between them. A second group (e.g. Software Engineering) is offset to the right or below, also connected internally. Shows that same-category nodes are placed adjacent to each other and that related items are automatically linked. -->
+![Smart Node Placement](.github/screenshots/canvas-connections.png)
+
+### AI Chat
+<!-- Screenshot: a Chat node open on the canvas, showing a 2–3 turn conversation. The question should be something specific to the content (e.g. "What ingredients do I need?"). The AI's answer is visible and references actual content. One or two Source nodes are visually connected to the Chat node (dashed lines from source to chat). The chat node's title bar and close/save buttons are visible at the top of the node. -->
+![AI Chat](.github/screenshots/chat.png)
+
+### Settings
+<!-- Screenshot: the Settings modal open and centred over the app. Shows the Provider dropdown (e.g. "Anthropic" selected), Model dropdown (e.g. "claude-sonnet-4-6"), the API Key field with masked dots. Below that, the Canvas section: Node placement toggle with "By category" or "By similarity" highlighted, and the Connection threshold slider positioned at around 0.30 with the "0.30" label visible. The "Test Connection" and "Save" buttons are visible at the bottom. -->
+![Settings](.github/screenshots/settings.png)
 
 ---
 
