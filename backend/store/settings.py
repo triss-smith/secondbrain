@@ -1,11 +1,15 @@
 import json
+import logging
 import os
 import shutil
+from dataclasses import dataclass
 from pathlib import Path
-from dataclasses import dataclass, asdict
 
-CONFIG_PATH = Path("data/config.json")
-BACKUP_PATH = Path("data/config.json.bak")
+logger = logging.getLogger(__name__)
+
+_PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
+CONFIG_PATH = _PROJECT_ROOT / "data" / "config.json"
+BACKUP_PATH = _PROJECT_ROOT / "data" / "config.json.bak"
 
 PROVIDERS = {
     "minimax": {
@@ -31,7 +35,7 @@ PROVIDERS = {
 }
 
 
-@dataclass
+@dataclass(frozen=True)
 class AISettings:
     provider: str
     model: str
@@ -49,10 +53,10 @@ class SettingsManager:
                 return AISettings(
                     provider=data.get("provider", "minimax"),
                     model=data.get("model", "MiniMax-M2.5"),
-                    api_key=data.get("api_key", os.getenv("MINIMAX_API_KEY", "")),
+                    api_key=data.get("api_key", ""),
                 )
-            except Exception:
-                pass
+            except Exception as exc:
+                logger.warning("Failed to load %s, falling back to env defaults: %s", CONFIG_PATH, exc)
         # Fall back to .env
         return AISettings(
             provider="minimax",
@@ -64,11 +68,14 @@ class SettingsManager:
         return self._settings
 
     def save(self, provider: str, model: str, api_key: str) -> None:
+        if provider not in PROVIDERS:
+            raise ValueError(f"Unknown provider '{provider}'. Valid: {list(PROVIDERS)}")
         CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
         if CONFIG_PATH.exists():
             shutil.copy2(CONFIG_PATH, BACKUP_PATH)
-        data = {"provider": provider, "model": model, "api_key": api_key}
-        CONFIG_PATH.write_text(json.dumps(data, indent=2))
+        tmp = CONFIG_PATH.with_suffix(".tmp")
+        tmp.write_text(json.dumps({"provider": provider, "model": model, "api_key": api_key}, indent=2))
+        tmp.replace(CONFIG_PATH)
         self._settings = AISettings(provider=provider, model=model, api_key=api_key)
 
 
