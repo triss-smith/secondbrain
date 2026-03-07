@@ -1,12 +1,15 @@
 import { useEffect, useState } from 'react'
 import { X, CheckCircle, XCircle, Loader2 } from 'lucide-react'
 import { getSettings, saveSettings, testConnection, type SettingsResponse } from '../api'
+import { THEMES } from '../themes'
 
 interface Props {
   onClose: () => void
+  themeId: string
+  onThemeChange: (id: string) => void
 }
 
-export function SettingsModal({ onClose }: Props) {
+export function SettingsModal({ onClose, themeId, onThemeChange }: Props) {
   const [data, setData] = useState<SettingsResponse | null>(null)
   const [provider, setProvider] = useState('')
   const [model, setModel] = useState('')
@@ -131,6 +134,26 @@ export function SettingsModal({ onClose }: Props) {
                   placeholder={data.api_key_set ? '••••••••••••••••' : 'Enter your API key...'}
                   className="w-full bg-surface-2 border border-surface-3 text-white text-xs rounded-lg px-3 py-2 outline-none focus:border-accent transition-colors placeholder-slate-600"
                 />
+              </div>
+
+              {/* Theme */}
+              <div>
+                <label className="block text-xs font-medium text-slate-400 mb-2">Theme</label>
+                <div className="flex gap-2">
+                  {THEMES.map(t => (
+                    <button
+                      key={t.id}
+                      title={t.name}
+                      onClick={() => onThemeChange(t.id)}
+                      className="relative w-7 h-7 rounded-full transition-transform hover:scale-110"
+                      style={{ backgroundColor: t.dark.accent }}
+                    >
+                      {themeId === t.id && (
+                        <span className="absolute inset-0 rounded-full ring-2 ring-white ring-offset-2 ring-offset-transparent" />
+                      )}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               {/* Canvas */}
