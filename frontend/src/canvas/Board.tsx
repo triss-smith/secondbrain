@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import ReactFlow, {
   addEdge,
   Background,
@@ -44,6 +44,7 @@ export function Board({ }: Props) {
   const [edges, setEdges, onEdgesChange] = useEdgesState([])
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const organizeModeRef = useRef<string>('category')
+  const [organizeLabel, setOrganizeLabel] = useState<'category' | 'similarity'>('category')
   const { fitView } = useReactFlow()
 
   // Load board state
@@ -55,10 +56,16 @@ export function Board({ }: Props) {
   }, [board?.id])
 
   useEffect(() => {
-    getSettings().then(s => { organizeModeRef.current = s.organize_mode })
+    getSettings().then(s => {
+      const mode = s.organize_mode as 'category' | 'similarity'
+      organizeModeRef.current = mode
+      setOrganizeLabel(mode)
+    })
 
     function onSettingsChanged(e: Event) {
-      organizeModeRef.current = (e as CustomEvent<{ organize_mode: string }>).detail.organize_mode
+      const mode = (e as CustomEvent<{ organize_mode: string }>).detail.organize_mode as 'category' | 'similarity'
+      organizeModeRef.current = mode
+      setOrganizeLabel(mode)
     }
     window.addEventListener('settings-changed', onSettingsChanged)
     return () => window.removeEventListener('settings-changed', onSettingsChanged)
@@ -166,13 +173,12 @@ export function Board({ }: Props) {
     }
 
     getItemSimilarities(itemIds).then(pairs => {
-      const semanticEdges = pairs.map(p => ({
-        id: `sem-${p.source}-${p.target}`,
-        source: sourceNodes.find(n => (n.data as SourceNodeData).item.id === p.source)!.id,
-        target: sourceNodes.find(n => (n.data as SourceNodeData).item.id === p.target)!.id,
-        type: 'semantic',
-        data: { similarity: p.similarity },
-      }))
+      const semanticEdges = pairs.flatMap(p => {
+        const sourceNode = sourceNodes.find(n => (n.data as SourceNodeData).item.id === p.source)
+        const targetNode = sourceNodes.find(n => (n.data as SourceNodeData).item.id === p.target)
+        if (!sourceNode || !targetNode) return []
+        return [{ id: `sem-${p.source}-${p.target}`, source: sourceNode.id, target: targetNode.id, type: 'semantic', data: { similarity: p.similarity } }]
+      })
       setEdges(prev => [
         ...prev.filter(e => e.type !== 'semantic'),
         ...semanticEdges,
@@ -313,7 +319,7 @@ export function Board({ }: Props) {
         <button
           onClick={handleOrganize}
           className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-surface-1 border border-surface-3 text-slate-400 hover:text-white hover:border-slate-500 rounded-lg shadow transition-colors"
-          title={`Auto-organize (${organizeModeRef.current === 'category' ? 'by category' : 'by similarity'})`}
+          title={`Auto-organize (${organizeLabel === 'category' ? 'by category' : 'by similarity'})`}
         >
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="12" cy="3" r="1"/><circle cx="3" cy="12" r="1"/><circle cx="21" cy="12" r="1"/>
