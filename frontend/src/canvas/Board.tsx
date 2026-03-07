@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import ReactFlow, {
   addEdge,
+  applyNodeChanges,
   Background,
   BackgroundVariant,
   Controls,
@@ -10,6 +11,7 @@ import ReactFlow, {
   useReactFlow,
   type Connection,
   type Node,
+  type NodePositionChange,
 } from 'reactflow'
 import 'reactflow/dist/style.css'
 
@@ -277,13 +279,16 @@ export function Board({ }: Props) {
       arranged = categoryLayout(sourceNodes)
     }
 
-    // Only update positions — preserve all React Flow internal fields on existing nodes
-    const positionMap = new Map(arranged.map(n => [n.id, n.position]))
+    // Use applyNodeChanges so React Flow updates both `position` and `positionAbsolute`
+    const changes: NodePositionChange[] = arranged.map(n => ({
+      type: 'position',
+      id: n.id,
+      position: n.position,
+      positionAbsolute: n.position,
+      dragging: false,
+    }))
     setNodes(prev => {
-      const updated = prev.map(n => {
-        const newPos = positionMap.get(n.id)
-        return newPos ? { ...n, position: newPos } : n
-      })
+      const updated = applyNodeChanges(changes, prev) as Node[]
       scheduleSave(updated, edges)
       return updated
     })
