@@ -16,6 +16,7 @@ export function SettingsModal({ onClose }: Props) {
   const [organizeMode, setOrganizeMode] = useState('category')
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
 
   useEffect(() => {
     getSettings().then(d => {
@@ -58,11 +59,14 @@ export function SettingsModal({ onClose }: Props) {
 
   async function handleSave() {
     setSaving(true)
+    setSaveError(null)
     try {
       await saveSettings({ provider, model, api_key: apiKey, organize_mode: organizeMode })
       window.dispatchEvent(new CustomEvent('settings-changed', { detail: { organize_mode: organizeMode } }))
       setSaved(true)
       setTimeout(() => setSaved(false), 2000)
+    } catch (e: unknown) {
+      setSaveError(e instanceof Error ? e.message : 'Save failed')
     } finally {
       setSaving(false)
     }
@@ -162,6 +166,11 @@ export function SettingsModal({ onClose }: Props) {
           )}
         </div>
 
+        {saveError && (
+          <div className="flex items-center gap-2 text-xs px-5 pb-2 text-red-400">
+            <XCircle size={13} /> {saveError}
+          </div>
+        )}
         <div className="flex items-center justify-between px-5 pb-5">
           <button
             onClick={handleTest}
