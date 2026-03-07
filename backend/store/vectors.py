@@ -99,8 +99,9 @@ def get_embeddings_for_items(item_ids: list[str]) -> dict[str, list[float]]:
             include=["embeddings"],
             limit=1,
         )
-        if results["embeddings"] and len(results["embeddings"]) > 0:
-            emb = results["embeddings"][0]
+        embs = results["embeddings"]
+        if embs is not None and len(embs) > 0:
+            emb = embs[0]
             if emb is not None and len(emb) > 0:
                 result[item_id] = emb
     return result
