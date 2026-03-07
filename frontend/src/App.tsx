@@ -1,15 +1,17 @@
 import { useState } from 'react'
-import { Brain, PanelLeftClose, PanelLeftOpen, MessageSquare } from 'lucide-react'
+import { Brain, PanelLeftClose, PanelLeftOpen, MessageSquare, Settings } from 'lucide-react'
 import { ReactFlowProvider } from 'reactflow'
 import { Board } from './canvas/Board'
 import { CaptureBar } from './sidebar/CaptureBar'
 import { Library } from './sidebar/Library'
 import { GlobalChat } from './components/GlobalChat'
+import { SettingsModal } from './components/SettingsModal'
 import type { Item } from './types'
 
 export default function App() {
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [chatOpen, setChatOpen] = useState(false)
+  const [settingsOpen, setSettingsOpen] = useState(false)
   const [refreshTrigger, setRefreshTrigger] = useState(0)
 
   function handleIngested(item: Item) {
@@ -31,7 +33,14 @@ export default function App() {
       >
         <div className="flex items-center gap-2.5 px-4 py-4 border-b border-surface-3 shrink-0">
           <Brain size={20} className="text-accent" />
-          <span className="text-sm font-bold text-white">Second Brain</span>
+          <span className="text-sm font-bold text-white flex-1">Second Brain</span>
+          <button
+            onClick={() => setSettingsOpen(true)}
+            className="text-slate-500 hover:text-white transition-colors p-1 rounded-lg"
+            title="Settings"
+          >
+            <Settings size={14} />
+          </button>
         </div>
         <Library onAddToCanvas={handleAddToCanvas} refreshTrigger={refreshTrigger} />
         <CaptureBar onIngested={handleIngested} />
@@ -71,6 +80,8 @@ export default function App() {
 
       {/* Right chat panel */}
       {chatOpen && <GlobalChat onClose={() => setChatOpen(false)} />}
+
+      {settingsOpen && <SettingsModal onClose={() => setSettingsOpen(false)} />}
     </div>
   )
 }
