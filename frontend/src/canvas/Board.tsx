@@ -277,11 +277,17 @@ export function Board({ }: Props) {
       arranged = categoryLayout(sourceNodes)
     }
 
-    const nonSource = nodes.filter(n => n.type !== 'source')
-    const updated = [...nonSource, ...arranged]
-    setNodes(updated)
-    scheduleSave(updated, edges)
-    setTimeout(() => fitView({ padding: 0.15, duration: 500 }), 50)
+    // Only update positions — preserve all React Flow internal fields on existing nodes
+    const positionMap = new Map(arranged.map(n => [n.id, n.position]))
+    setNodes(prev => {
+      const updated = prev.map(n => {
+        const newPos = positionMap.get(n.id)
+        return newPos ? { ...n, position: newPos } : n
+      })
+      scheduleSave(updated, edges)
+      return updated
+    })
+    setTimeout(() => fitView({ padding: 0.15, duration: 500 }), 100)
   }
 
   return (
