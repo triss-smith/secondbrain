@@ -45,7 +45,7 @@ export function Board({ }: Props) {
   const [edges, setEdges, onEdgesChange] = useEdgesState([])
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const organizeModeRef = useRef<string>('category')
-  const thresholdRef = useRef<number>(0.3)
+  const [similarityThreshold, setSimilarityThreshold] = useState<number>(0.3)
   const [organizeLabel, setOrganizeLabel] = useState<'category' | 'similarity'>('category')
   const { fitView } = useReactFlow()
 
@@ -62,7 +62,7 @@ export function Board({ }: Props) {
       const mode = s.organize_mode as 'category' | 'similarity'
       organizeModeRef.current = mode
       setOrganizeLabel(mode)
-      thresholdRef.current = s.similarity_threshold
+      setSimilarityThreshold(s.similarity_threshold)
     })
 
     function onSettingsChanged(e: Event) {
@@ -70,7 +70,7 @@ export function Board({ }: Props) {
       const mode = detail.organize_mode as 'category' | 'similarity'
       organizeModeRef.current = mode
       setOrganizeLabel(mode)
-      thresholdRef.current = detail.similarity_threshold
+      setSimilarityThreshold(detail.similarity_threshold)
     }
     window.addEventListener('settings-changed', onSettingsChanged)
     return () => window.removeEventListener('settings-changed', onSettingsChanged)
@@ -177,7 +177,7 @@ export function Board({ }: Props) {
       return
     }
 
-    getItemSimilarities(itemIds, thresholdRef.current).then(pairs => {
+    getItemSimilarities(itemIds, similarityThreshold).then(pairs => {
       const semanticEdges = pairs.flatMap(p => {
         const sourceNode = sourceNodes.find(n => (n.data as SourceNodeData).item.id === p.source)
         const targetNode = sourceNodes.find(n => (n.data as SourceNodeData).item.id === p.target)
@@ -189,7 +189,7 @@ export function Board({ }: Props) {
         ...semanticEdges,
       ])
     })
-  }, [nodes.filter(n => n.type === 'source').map(n => n.id).join(',')])
+  }, [nodes.filter(n => n.type === 'source').map(n => n.id).join(','), similarityThreshold])
 
   async function addSourceNode(item: Item) {
     const exists = nodes.some(n => n.data?.item?.id === item.id)
