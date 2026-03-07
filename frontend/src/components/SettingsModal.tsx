@@ -14,6 +14,7 @@ export function SettingsModal({ onClose }: Props) {
   const [testing, setTesting] = useState(false)
   const [testResult, setTestResult] = useState<{ ok: boolean; error?: string } | null>(null)
   const [organizeMode, setOrganizeMode] = useState('category')
+  const [similarityThreshold, setSimilarityThreshold] = useState(0.3)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
@@ -24,6 +25,7 @@ export function SettingsModal({ onClose }: Props) {
       setProvider(d.provider)
       setModel(d.model)
       setOrganizeMode(d.organize_mode)
+      setSimilarityThreshold(d.similarity_threshold)
     })
   }, [])
 
@@ -47,7 +49,7 @@ export function SettingsModal({ onClose }: Props) {
     setTesting(true)
     setTestResult(null)
     try {
-      await saveSettings({ provider, model, api_key: apiKey, organize_mode: organizeMode })
+      await saveSettings({ provider, model, api_key: apiKey, organize_mode: organizeMode, similarity_threshold: similarityThreshold })
       const result = await testConnection()
       setTestResult(result)
     } catch {
@@ -61,8 +63,8 @@ export function SettingsModal({ onClose }: Props) {
     setSaving(true)
     setSaveError(null)
     try {
-      await saveSettings({ provider, model, api_key: apiKey, organize_mode: organizeMode })
-      window.dispatchEvent(new CustomEvent('settings-changed', { detail: { organize_mode: organizeMode } }))
+      await saveSettings({ provider, model, api_key: apiKey, organize_mode: organizeMode, similarity_threshold: similarityThreshold })
+      window.dispatchEvent(new CustomEvent('settings-changed', { detail: { organize_mode: organizeMode, similarity_threshold: similarityThreshold } }))
       setSaved(true)
       setTimeout(() => setSaved(false), 2000)
     } catch (e: unknown) {
@@ -152,6 +154,26 @@ export function SettingsModal({ onClose }: Props) {
                     ? 'New nodes land near items in the same category. Auto-organize groups by category.'
                     : 'New nodes land near the most semantically similar item. Auto-organize uses a force-directed layout.'}
                 </p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-slate-400 mb-1.5">
+                  Connection threshold
+                  <span className="ml-2 text-slate-500 font-normal">{similarityThreshold.toFixed(2)}</span>
+                </label>
+                <input
+                  type="range"
+                  min={0.1}
+                  max={0.9}
+                  step={0.05}
+                  value={similarityThreshold}
+                  onChange={e => setSimilarityThreshold(parseFloat(e.target.value))}
+                  className="w-full accent-accent"
+                />
+                <div className="flex justify-between text-[10px] text-slate-600 mt-0.5">
+                  <span>More connections</span>
+                  <span>Fewer connections</span>
+                </div>
               </div>
 
               {testResult && (
