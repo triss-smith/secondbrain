@@ -1,7 +1,7 @@
 from typing import AsyncIterator
 
 from backend.ai.embed import embed_text
-from backend.ai.minimax import chat_stream
+from backend.ai.client import chat_stream
 from backend.store import vectors
 
 

@@ -7,7 +7,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from backend.ai.embed import chunk_text, embed_batch
-from backend.ai.minimax import chat
+from backend.ai.client import chat
 from backend.ingest.base import ingest_file, ingest_text, ingest_url
 from backend.store.db import Chunk, Item, get_db
 from backend.store import vectors
