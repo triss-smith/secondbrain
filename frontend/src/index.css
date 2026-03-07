@@ -22,8 +22,11 @@ body {
 [data-theme] .border-surface-2                { border-color: var(--color-surface-2); }
 [data-theme] .bg-accent                       { background-color: var(--color-accent); }
 [data-theme] .hover\:bg-accent-hover:hover    { background-color: var(--color-accent-hover); }
+[data-theme] .hover\:bg-surface-2:hover       { background-color: var(--color-surface-2); }
+[data-theme] .hover\:bg-surface-3:hover       { background-color: var(--color-surface-3); }
 [data-theme] .border-accent                   { border-color: var(--color-accent); }
 [data-theme] .focus\:border-accent:focus      { border-color: var(--color-accent); }
+[data-theme] .focus-within\:border-accent:focus-within { border-color: var(--color-accent); }
 [data-theme] .text-accent                     { color: var(--color-accent); }
 [data-theme] .accent-accent                   { accent-color: var(--color-accent); }
 
@@ -63,7 +66,7 @@ body {
   color: #e2e8f0;
   fill: #e2e8f0;
 }
-[data-theme] .react-flow__controls button     { background-color: var(--color-surface-1); border-bottom-color: var(--color-surface-3); color: var(--color-surface-3); fill: var(--color-surface-3); }
+[data-theme] .react-flow__controls button     { background-color: var(--color-surface-1); border-bottom-color: var(--color-surface-3); color: #e2e8f0; fill: #e2e8f0; }
 [data-theme="light"] .react-flow__controls button { color: #1e293b; fill: #1e293b; }
 
 .react-flow__controls button:hover            { background-color: #2a2f47; }
