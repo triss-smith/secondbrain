@@ -38,10 +38,11 @@ const EDGE_TYPES = {
 }
 
 interface Props {
-  onItemDrop?: (item: Item) => void
+  isDark?: boolean
+  themeId?: string
 }
 
-export function Board({ }: Props) {
+export function Board({ isDark = true }: Props) {
   const { board, saveState } = useBoard()
   const [nodes, setNodes, onNodesChange] = useNodesState([])
   const [edges, setEdges, onEdgesChange] = useEdgesState([])
@@ -400,6 +401,19 @@ export function Board({ }: Props) {
     setTimeout(() => fitView({ padding: 0.15, duration: 500 }), 100)
   }
 
+  const cssVar = (name: string) =>
+    getComputedStyle(document.documentElement).getPropertyValue(name).trim()
+  const accentColor   = cssVar('--color-accent')   || '#7c6af7'
+  const surface3Color = cssVar('--color-surface-3') || '#2a2f47'
+  const surfaceColor  = cssVar('--color-surface')   || '#0f1117'
+
+  function hexToRgba(hex: string, alpha: number) {
+    const r = parseInt(hex.slice(1, 3), 16)
+    const g = parseInt(hex.slice(3, 5), 16)
+    const b = parseInt(hex.slice(5, 7), 16)
+    return `rgba(${r},${g},${b},${alpha})`
+  }
+
   return (
     <ReactFlow
       nodes={nodes}
@@ -420,15 +434,15 @@ export function Board({ }: Props) {
       maxZoom={2}
       className="flex-1"
     >
-      <Background variant={BackgroundVariant.Dots} color="#2a2f47" gap={24} size={1} />
+      <Background variant={BackgroundVariant.Dots} color={surface3Color} gap={24} size={1} />
       <Controls showInteractive={false} />
       <MiniMap
         nodeColor={n => {
-          if (n.type === 'source') return '#7c6af7'
+          if (n.type === 'source') return accentColor
           if (n.type === 'chat') return '#34d399'
           return '#475569'
         }}
-        maskColor="rgba(15,17,23,0.7)"
+        maskColor={hexToRgba(surfaceColor, 0.7)}
       />
       {board && (
         <Toolbar
