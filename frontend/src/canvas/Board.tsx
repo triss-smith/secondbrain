@@ -5,7 +5,6 @@ import ReactFlow, {
   BackgroundVariant,
   Controls,
   MiniMap,
-  Panel,
   useEdgesState,
   useNodesState,
   useReactFlow,
@@ -315,25 +314,12 @@ export function Board({ }: Props) {
         }}
         maskColor="rgba(15,17,23,0.7)"
       />
-      <Panel position="top-center">
-        <button
-          onClick={handleOrganize}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-surface-1 border border-surface-3 text-slate-400 hover:text-white hover:border-slate-500 rounded-lg shadow transition-colors"
-          title={`Auto-organize (${organizeLabel === 'category' ? 'by category' : 'by similarity'})`}
-        >
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="3" r="1"/><circle cx="3" cy="12" r="1"/><circle cx="21" cy="12" r="1"/>
-            <circle cx="12" cy="21" r="1"/><circle cx="5.6" cy="5.6" r="1"/><circle cx="18.4" cy="5.6" r="1"/>
-            <circle cx="5.6" cy="18.4" r="1"/><circle cx="18.4" cy="18.4" r="1"/>
-            <line x1="12" y1="3" x2="12" y2="21"/><line x1="3" y1="12" x2="21" y2="12"/>
-          </svg>
-          Organize
-        </button>
-      </Panel>
       {board && (
         <Toolbar
           boardId={board.id}
           onAddChat={() => addChatNode()}
+          onOrganize={handleOrganize}
+          organizeLabel={organizeLabel}
         />
       )}
     </ReactFlow>

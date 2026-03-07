@@ -1,12 +1,14 @@
-import { MessageSquarePlus, ZoomIn, ZoomOut, Maximize2 } from 'lucide-react'
+import { MessageSquarePlus, ZoomIn, ZoomOut, Maximize2, LayoutGrid } from 'lucide-react'
 import { useReactFlow } from 'reactflow'
 
 interface Props {
   boardId: string
   onAddChat: () => void
+  onOrganize: () => void
+  organizeLabel: 'category' | 'similarity'
 }
 
-export function Toolbar({ onAddChat }: Props) {
+export function Toolbar({ onAddChat, onOrganize, organizeLabel }: Props) {
   const { zoomIn, zoomOut, fitView } = useReactFlow()
 
   return (
@@ -14,6 +16,13 @@ export function Toolbar({ onAddChat }: Props) {
       <ToolButton onClick={onAddChat} title="New chat node">
         <MessageSquarePlus size={15} />
         <span className="text-[11px]">Chat</span>
+      </ToolButton>
+
+      <div className="w-px h-5 bg-surface-3 mx-1" />
+
+      <ToolButton onClick={onOrganize} title={`Auto-organize (${organizeLabel === 'category' ? 'by category' : 'by similarity'})`}>
+        <LayoutGrid size={15} />
+        <span className="text-[11px]">Organize</span>
       </ToolButton>
 
       <div className="w-px h-5 bg-surface-3 mx-1" />
