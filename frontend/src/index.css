@@ -50,8 +50,9 @@ body {
 .react-flow__edge-path                        { stroke: #7c6af7; stroke-opacity: 0.4; }
 [data-theme] .react-flow__edge-path           { stroke: var(--color-accent); }
 
-.react-flow__minimap                          { background-color: #1a1d27; border-radius: 8px; }
-[data-theme] .react-flow__minimap             { background-color: var(--color-surface-1); }
+.react-flow__minimap                          { background-color: #1a1d27; border-radius: 12px; border: 1px solid #2a2f47; }
+[data-theme] .react-flow__minimap             { background-color: var(--color-surface-1); border-color: var(--color-surface-3); }
+.react-flow__minimap svg                      { cursor: crosshair; }
 
 .react-flow__controls {
   background-color: #1a1d27;

@@ -443,6 +443,10 @@ export function Board({ isDark = true }: Props) {
           return '#475569'
         }}
         maskColor={hexToRgba(surfaceColor, 0.7)}
+        pannable
+        zoomable
+        style={{ width: 200, height: 140 }}
+        className="!border !border-surface-3 !rounded-xl"
       />
       {board && (
         <Toolbar
