@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Send, Loader2, Trash2, X } from 'lucide-react'
+import ReactMarkdown from 'react-markdown'
 import { useChat } from '../hooks/useChat'
 import { listItems } from '../api'
 import type { Item } from '../types'
@@ -70,7 +71,7 @@ export function GlobalChat({ onClose }: Props) {
   }
 
   return (
-    <div className="flex flex-col h-full w-80 border-l border-surface-3 bg-surface-1">
+    <div className="flex flex-col h-full w-full border-l border-surface-3 bg-surface-1">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-surface-3 bg-surface-2 shrink-0">
         <div>
@@ -133,7 +134,9 @@ export function GlobalChat({ onClose }: Props) {
                   : 'bg-surface-2 text-slate-200 rounded-tl-sm'
               }`}
             >
-              {msg.content}
+              {msg.role === 'assistant'
+                ? <div className="prose prose-invert prose-xs max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0"><ReactMarkdown>{msg.content}</ReactMarkdown></div>
+                : msg.content}
             </div>
           </div>
         ))}

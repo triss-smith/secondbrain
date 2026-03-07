@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Brain, PanelLeftClose, PanelLeftOpen, MessageSquare, Settings, Sun, Moon } from 'lucide-react'
 import { ReactFlowProvider } from 'reactflow'
 import { Board } from './canvas/Board'
@@ -14,7 +14,51 @@ export default function App() {
   const [chatOpen, setChatOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [refreshTrigger, setRefreshTrigger] = useState(0)
+  const [sidebarWidth, setSidebarWidth] = useState(288)
+  const [chatWidth, setChatWidth] = useState(320)
   const { isDark, themeId, setThemeId, toggleMode } = useTheme()
+
+  // Hotkeys: Ctrl/Cmd+B = sidebar, Ctrl/Cmd+I = chat
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      const mod = e.metaKey || e.ctrlKey
+      if (mod && e.key === 'b') { e.preventDefault(); setSidebarOpen(o => !o) }
+      if (mod && e.key === 'i') { e.preventDefault(); setChatOpen(o => !o) }
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [])
+
+  function startSidebarResize(e: React.MouseEvent) {
+    e.preventDefault()
+    const startX = e.clientX
+    const startW = sidebarWidth
+    const onMove = (ev: MouseEvent) => {
+      setSidebarWidth(Math.max(200, Math.min(600, startW + ev.clientX - startX)))
+    }
+    const onUp = () => {
+      window.removeEventListener('mousemove', onMove)
+      window.removeEventListener('mouseup', onUp)
+    }
+    window.addEventListener('mousemove', onMove)
+    window.addEventListener('mouseup', onUp)
+  }
+
+  function startChatResize(e: React.MouseEvent) {
+    e.preventDefault()
+    const startX = e.clientX
+    const startW = chatWidth
+    const onMove = (ev: MouseEvent) => {
+      setChatWidth(Math.max(260, Math.min(700, startW - (ev.clientX - startX))))
+    }
+    const onUp = () => {
+      window.removeEventListener('mousemove', onMove)
+      window.removeEventListener('mouseup', onUp)
+    }
+    window.addEventListener('mousemove', onMove)
+    window.addEventListener('mouseup', onUp)
+  }
+
 
   function handleIngested(item: Item) {
     setRefreshTrigger(t => t + 1)
@@ -29,9 +73,10 @@ export default function App() {
     <div className="flex h-screen w-screen overflow-hidden bg-surface">
       {/* Left sidebar */}
       <aside
-        className={`flex flex-col border-r border-surface-3 bg-surface-1 transition-all duration-300 shrink-0 ${
-          sidebarOpen ? 'w-72' : 'w-0 overflow-hidden'
+        className={`flex flex-col border-r border-surface-3 bg-surface-1 shrink-0 relative ${
+          sidebarOpen ? '' : 'w-0 overflow-hidden'
         }`}
+        style={sidebarOpen ? { width: sidebarWidth } : undefined}
       >
         <div className="flex items-center gap-2.5 px-4 py-4 border-b border-surface-3 shrink-0">
           <Brain size={20} className="text-accent" />
@@ -53,6 +98,13 @@ export default function App() {
         </div>
         <Library onAddToCanvas={handleAddToCanvas} refreshTrigger={refreshTrigger} />
         <CaptureBar onIngested={handleIngested} />
+        {/* Sidebar resize handle */}
+        <div
+          onMouseDown={startSidebarResize}
+          className="absolute right-0 top-0 h-full w-4 cursor-col-resize z-20 resize-handle-zone flex items-center justify-end"
+        >
+          <div className="resize-handle-line h-full w-px" />
+        </div>
       </aside>
 
       {/* Main canvas area */}
@@ -88,7 +140,18 @@ export default function App() {
       </main>
 
       {/* Right chat panel */}
-      {chatOpen && <GlobalChat onClose={() => setChatOpen(false)} />}
+      {chatOpen && (
+        <div className="relative flex shrink-0" style={{ width: chatWidth }}>
+          {/* Chat resize handle */}
+          <div
+            onMouseDown={startChatResize}
+            className="absolute left-0 top-0 h-full w-4 cursor-col-resize z-20 resize-handle-zone flex items-center justify-start"
+          >
+            <div className="resize-handle-line h-full w-px" />
+          </div>
+          <GlobalChat onClose={() => setChatOpen(false)} />
+        </div>
+      )}
 
       {settingsOpen && (
         <SettingsModal
