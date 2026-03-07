@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <!-- Left hemisphere -->
+  <path d="M16 6C16 6 13 5 10.5 6.5C8 8 7 10.5 7 12C7 13 7.5 14 7.5 14C7.5 14 6 14.5 6 16.5C6 18 7 19.5 8.5 20C8.5 20 8 21 8.5 22C9 23.5 10.5 24.5 12 24.5C12 24.5 12.5 26 14 26.5C15 26.8 16 26.5 16 26.5V6Z"
+    fill="#7c6af7"/>
+  <!-- Right hemisphere -->
+  <path d="M16 6C16 6 19 5 21.5 6.5C24 8 25 10.5 25 12C25 13 24.5 14 24.5 14C24.5 14 26 14.5 26 16.5C26 18 25 19.5 23.5 20C23.5 20 24 21 23.5 22C23 23.5 21.5 24.5 20 24.5C20 24.5 19.5 26 18 26.5C17 26.8 16 26.5 16 26.5V6Z"
+    fill="#9d8ff9"/>
+  <!-- Center line -->
+  <line x1="16" y1="7" x2="16" y2="26" stroke="#0f1117" stroke-width="1.2"/>
+  <!-- Left folds -->
+  <path d="M10 13C11.5 12 12.5 13.5 11.5 15" stroke="#5a4fd4" stroke-width="1" stroke-linecap="round" fill="none"/>
+  <path d="M9.5 18C11 17 12.5 18.5 11 20" stroke="#5a4fd4" stroke-width="1" stroke-linecap="round" fill="none"/>
+  <!-- Right folds -->
+  <path d="M22 13C20.5 12 19.5 13.5 20.5 15" stroke="#b8acfc" stroke-width="1" stroke-linecap="round" fill="none"/>
+  <path d="M22.5 18C21 17 19.5 18.5 21 20" stroke="#b8acfc" stroke-width="1" stroke-linecap="round" fill="none"/>
+</svg>
