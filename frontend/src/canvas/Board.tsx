@@ -107,16 +107,19 @@ export function Board({ }: Props) {
         )
         if (alreadyLinked) return
 
-        setNodes(prev => prev.map(n => {
-          if (n.id !== chatNode.id) return n
-          const ids = n.data.item_ids as string[]
-          if (ids.includes(itemId)) return n
-          return { ...n, data: { ...n.data, item_ids: [...ids, itemId] } }
-        }))
         const newEdge = { id: `sc-${srcNode.id}-${chatNode.id}`, source: srcNode.id, target: chatNode.id, type: 'source-chat' }
         const updatedEdges = [...edges, newEdge]
         setEdges(updatedEdges)
-        scheduleSave(nodes, updatedEdges)
+        setNodes(prev => {
+          const updated = prev.map(n => {
+            if (n.id !== chatNode.id) return n
+            const ids = n.data.item_ids as string[]
+            if (ids.includes(itemId)) return n
+            return { ...n, data: { ...n.data, item_ids: [...ids, itemId] } }
+          })
+          scheduleSave(updated, updatedEdges)
+          return updated
+        })
       } else {
         const updated = addEdge({ ...connection, type: 'semantic' }, edges)
         setEdges(updated)
