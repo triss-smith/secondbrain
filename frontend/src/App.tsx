@@ -1,11 +1,12 @@
 import { useState } from 'react'
-import { Brain, PanelLeftClose, PanelLeftOpen, MessageSquare, Settings } from 'lucide-react'
+import { Brain, PanelLeftClose, PanelLeftOpen, MessageSquare, Settings, Sun, Moon } from 'lucide-react'
 import { ReactFlowProvider } from 'reactflow'
 import { Board } from './canvas/Board'
 import { CaptureBar } from './sidebar/CaptureBar'
 import { Library } from './sidebar/Library'
 import { GlobalChat } from './components/GlobalChat'
 import { SettingsModal } from './components/SettingsModal'
+import { useTheme } from './hooks/useTheme'
 import type { Item } from './types'
 
 export default function App() {
@@ -13,6 +14,7 @@ export default function App() {
   const [chatOpen, setChatOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [refreshTrigger, setRefreshTrigger] = useState(0)
+  const { isDark, themeId, setThemeId, toggleMode } = useTheme()
 
   function handleIngested(item: Item) {
     setRefreshTrigger(t => t + 1)
@@ -34,6 +36,13 @@ export default function App() {
         <div className="flex items-center gap-2.5 px-4 py-4 border-b border-surface-3 shrink-0">
           <Brain size={20} className="text-accent" />
           <span className="text-sm font-bold text-white flex-1">Second Brain</span>
+          <button
+            onClick={toggleMode}
+            className="text-slate-500 hover:text-white transition-colors p-1 rounded-lg"
+            title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+          >
+            {isDark ? <Sun size={14} /> : <Moon size={14} />}
+          </button>
           <button
             onClick={() => setSettingsOpen(true)}
             className="text-slate-500 hover:text-white transition-colors p-1 rounded-lg"
@@ -74,14 +83,20 @@ export default function App() {
         </div>
 
         <ReactFlowProvider>
-          <Board />
+          <Board isDark={isDark} themeId={themeId} />
         </ReactFlowProvider>
       </main>
 
       {/* Right chat panel */}
       {chatOpen && <GlobalChat onClose={() => setChatOpen(false)} />}
 
-      {settingsOpen && <SettingsModal onClose={() => setSettingsOpen(false)} />}
+      {settingsOpen && (
+        <SettingsModal
+          onClose={() => setSettingsOpen(false)}
+          themeId={themeId}
+          onThemeChange={setThemeId}
+        />
+      )}
     </div>
   )
 }
