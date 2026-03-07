@@ -98,3 +98,33 @@ export const testConnection = () =>
 
 // WebSocket chat
 export const WS_CHAT_URL = `${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.host}/ws/chat`
+
+// Mind Map
+export interface MindMapNodeData {
+  item_id: string
+  label: string
+  content_type: string
+  thumbnail: string | null
+  summary: string
+  snippet: string
+}
+
+export interface RawMindMapNode {
+  id: string
+  data: MindMapNodeData
+}
+
+export interface RawMindMapEdge {
+  id: string
+  source: string
+  target: string
+  data: { similarity: number }
+}
+
+export interface RawMindMapResponse {
+  nodes: RawMindMapNode[]
+  edges: RawMindMapEdge[]
+}
+
+export const getMindMap = () =>
+  api.get<RawMindMapResponse>('/mind-map').then(r => r.data)
