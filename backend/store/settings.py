@@ -40,6 +40,7 @@ class AISettings:
     provider: str
     model: str
     api_key: str
+    organize_mode: str = "category"
 
 
 class SettingsManager:
@@ -54,6 +55,7 @@ class SettingsManager:
                     provider=data.get("provider", "minimax"),
                     model=data.get("model", "MiniMax-M2.5"),
                     api_key=data.get("api_key", ""),
+                    organize_mode=data.get("organize_mode", "category"),
                 )
             except Exception as exc:
                 logger.warning("Failed to load %s, falling back to env defaults: %s", CONFIG_PATH, exc)
@@ -67,16 +69,23 @@ class SettingsManager:
     def get(self) -> AISettings:
         return self._settings
 
-    def save(self, provider: str, model: str, api_key: str) -> None:
+    def save(self, provider: str, model: str, api_key: str, organize_mode: str = "category") -> None:
         if provider not in PROVIDERS:
             raise ValueError(f"Unknown provider '{provider}'. Valid: {list(PROVIDERS)}")
+        if organize_mode not in ("category", "similarity"):
+            raise ValueError(f"Invalid organize_mode '{organize_mode}'. Must be 'category' or 'similarity'.")
         CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
         if CONFIG_PATH.exists():
             shutil.copy2(CONFIG_PATH, BACKUP_PATH)
         tmp = CONFIG_PATH.with_suffix(".tmp")
-        tmp.write_text(json.dumps({"provider": provider, "model": model, "api_key": api_key}, indent=2))
+        tmp.write_text(json.dumps({
+            "provider": provider,
+            "model": model,
+            "api_key": api_key,
+            "organize_mode": organize_mode,
+        }, indent=2))
         tmp.replace(CONFIG_PATH)
-        self._settings = AISettings(provider=provider, model=model, api_key=api_key)
+        self._settings = AISettings(provider=provider, model=model, api_key=api_key, organize_mode=organize_mode)
 
 
 settings_manager = SettingsManager()

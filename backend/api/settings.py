@@ -10,6 +10,7 @@ class SaveSettingsRequest(BaseModel):
     provider: str
     model: str
     api_key: str
+    organize_mode: str = "category"
 
 
 @router.get("")
@@ -19,6 +20,7 @@ def get_settings():
         "provider": s.provider,
         "model": s.model,
         "api_key_set": bool(s.api_key),
+        "organize_mode": s.organize_mode,
         "providers": PROVIDERS,
     }
 
@@ -30,11 +32,13 @@ def save_settings(req: SaveSettingsRequest):
     valid_models = PROVIDERS[req.provider]["models"]
     if req.model not in valid_models:
         raise HTTPException(status_code=400, detail=f"Invalid model '{req.model}' for provider '{req.provider}'. Valid: {valid_models}")
+    if req.organize_mode not in ("category", "similarity"):
+        raise HTTPException(status_code=400, detail="organize_mode must be 'category' or 'similarity'")
     # Preserve existing key if client sends empty string (user didn't re-enter it)
     api_key = req.api_key if req.api_key else settings_manager.get().api_key
-    settings_manager.save(req.provider, req.model, api_key)
+    settings_manager.save(req.provider, req.model, api_key, req.organize_mode)
     s = settings_manager.get()
-    return {"provider": s.provider, "model": s.model, "api_key_set": bool(s.api_key)}
+    return {"provider": s.provider, "model": s.model, "api_key_set": bool(s.api_key), "organize_mode": s.organize_mode}
 
 
 @router.post("/test")

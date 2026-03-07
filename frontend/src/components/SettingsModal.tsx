@@ -13,6 +13,7 @@ export function SettingsModal({ onClose }: Props) {
   const [apiKey, setApiKey] = useState('')
   const [testing, setTesting] = useState(false)
   const [testResult, setTestResult] = useState<{ ok: boolean; error?: string } | null>(null)
+  const [organizeMode, setOrganizeMode] = useState('category')
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
 
@@ -21,6 +22,7 @@ export function SettingsModal({ onClose }: Props) {
       setData(d)
       setProvider(d.provider)
       setModel(d.model)
+      setOrganizeMode(d.organize_mode)
     })
   }, [])
 
@@ -44,7 +46,7 @@ export function SettingsModal({ onClose }: Props) {
     setTesting(true)
     setTestResult(null)
     try {
-      await saveSettings({ provider, model, api_key: apiKey })
+      await saveSettings({ provider, model, api_key: apiKey, organize_mode: organizeMode })
       const result = await testConnection()
       setTestResult(result)
     } catch {
@@ -57,7 +59,8 @@ export function SettingsModal({ onClose }: Props) {
   async function handleSave() {
     setSaving(true)
     try {
-      await saveSettings({ provider, model, api_key: apiKey })
+      await saveSettings({ provider, model, api_key: apiKey, organize_mode: organizeMode })
+      window.dispatchEvent(new CustomEvent('settings-changed', { detail: { organize_mode: organizeMode } }))
       setSaved(true)
       setTimeout(() => setSaved(false), 2000)
     } finally {
@@ -120,6 +123,31 @@ export function SettingsModal({ onClose }: Props) {
                   placeholder={data.api_key_set ? '••••••••••••••••' : 'Enter your API key...'}
                   className="w-full bg-surface-2 border border-surface-3 text-white text-xs rounded-lg px-3 py-2 outline-none focus:border-accent transition-colors placeholder-slate-600"
                 />
+              </div>
+
+              {/* Canvas */}
+              <div>
+                <label className="block text-xs font-medium text-slate-400 mb-1.5">Node placement</label>
+                <div className="flex rounded-lg overflow-hidden border border-surface-3">
+                  {(['category', 'similarity'] as const).map(mode => (
+                    <button
+                      key={mode}
+                      onClick={() => setOrganizeMode(mode)}
+                      className={`flex-1 text-xs py-2 px-3 transition-colors ${
+                        organizeMode === mode
+                          ? 'bg-accent text-white font-semibold'
+                          : 'bg-surface-2 text-slate-400 hover:text-white'
+                      }`}
+                    >
+                      {mode === 'category' ? 'By category' : 'By similarity'}
+                    </button>
+                  ))}
+                </div>
+                <p className="mt-1.5 text-xs text-slate-600">
+                  {organizeMode === 'category'
+                    ? 'New nodes land near items in the same category. Auto-organize groups by category.'
+                    : 'New nodes land near the most semantically similar item. Auto-organize uses a force-directed layout.'}
+                </p>
               </div>
 
               {testResult && (
