@@ -15,6 +15,8 @@ def _provider_config():
 
 async def chat_stream(messages: list[dict], system: str | None = None) -> AsyncIterator[str]:
     s, provider = _provider_config()
+    if not s.api_key:
+        raise RuntimeError(f"No API key configured for provider '{s.provider}'. Set one in Settings.")
     if provider["sdk"] == "anthropic":
         async with anthropic.AsyncAnthropic(
             api_key=s.api_key,
@@ -55,12 +57,14 @@ async def chat_stream(messages: list[dict], system: str | None = None) -> AsyncI
                         delta = chunk["choices"][0]["delta"].get("content", "")
                         if delta:
                             yield delta
-                    except Exception:
+                    except (json.JSONDecodeError, KeyError, IndexError):
                         continue
 
 
 async def chat(messages: list[dict], system: str | None = None) -> str:
     s, provider = _provider_config()
+    if not s.api_key:
+        raise RuntimeError(f"No API key configured for provider '{s.provider}'. Set one in Settings.")
     if provider["sdk"] == "anthropic":
         client = anthropic.AsyncAnthropic(
             api_key=s.api_key,
