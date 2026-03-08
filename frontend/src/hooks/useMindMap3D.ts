@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { forceSimulation, forceLink, forceManyBody, forceCenter, type SimLink } from 'd3-force-3d'
-import { getMindMap } from '../api'
-import type { ContentType } from '../types'
+import { getMindMap, listConnections } from '../api'
+import type { ContentType, Connection } from '../types'
 
 export interface SimNode3D {
   id: string          // "mm-{item_id}" — matches backend node id
@@ -25,6 +25,7 @@ export interface SimEdge3D {
 interface MindMap3DState {
   nodes: SimNode3D[]
   edges: SimEdge3D[]
+  userConnections: Connection[]
   loading: boolean
   error: string | null
 }
@@ -33,13 +34,14 @@ export function useMindMap3D(): MindMap3DState {
   const [state, setState] = useState<MindMap3DState>({
     nodes: [],
     edges: [],
+    userConnections: [],
     loading: true,
     error: null,
   })
 
   useEffect(() => {
-    getMindMap()
-      .then(raw => {
+    Promise.all([getMindMap(), listConnections()])
+      .then(([raw, conns]) => {
         // Count degree per node
         const degreeMap: Record<string, number> = {}
         raw.nodes.forEach(n => { degreeMap[n.id] = 0 })
@@ -98,7 +100,7 @@ export function useMindMap3D(): MindMap3DState {
           similarity: l.similarity,
         }))
 
-        setState({ nodes: simNodes, edges: settledEdges, loading: false, error: null })
+        setState({ nodes: simNodes, edges: settledEdges, userConnections: conns, loading: false, error: null })
       })
       .catch(err => {
         setState(prev => ({ ...prev, loading: false, error: String(err) }))

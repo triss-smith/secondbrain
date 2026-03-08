@@ -5,7 +5,14 @@ import { X } from 'lucide-react'
 import { useMindMap3D, type SimNode3D, type SimEdge3D } from '../hooks/useMindMap3D'
 import { ItemDetailModal } from './ItemDetailModal'
 import { CONTENT_TYPE_COLORS } from '../canvas/nodeUtils'
-import type { Item } from '../types'
+import type { Item, Connection, ConnectionType } from '../types'
+
+const CONN_COLORS: Record<ConnectionType, string> = {
+  related: '#60a5fa',
+  source: '#34d399',
+  inspired_by: '#f59e0b',
+  contradicts: '#f87171',
+}
 
 // ── Sub-components (must be inside Canvas for r3f hooks) ──────────────────
 
@@ -26,15 +33,29 @@ function CameraKeyboard() {
 function NodeSphere({
   node,
   onSelect,
+  userConnections,
 }: {
   node: SimNode3D
   onSelect: (itemId: string) => void
+  userConnections: Connection[]
 }) {
   const [hovered, setHovered] = useState(false)
   const color = CONTENT_TYPE_COLORS[node.content_type] ?? '#7c6af7'
   const radius = Math.max(1, 1 + Math.min(node.degree, 5) * 0.35)
   const shortLabel = node.label.length > 28 ? node.label.slice(0, 28) + '…' : node.label
   const preview = (node.summary || node.snippet).slice(0, 90)
+
+  const myConns = userConnections.filter(
+    c => c.source_item_id === node.item_id || c.target_item_id === node.item_id
+  )
+  const connSummary = myConns.length > 0
+    ? Object.entries(
+        myConns.reduce((acc, c) => {
+          acc[c.type] = (acc[c.type] ?? 0) + 1
+          return acc
+        }, {} as Record<string, number>)
+      ).map(([t, n]) => `${n} ${t.replace(/_/g, ' ')}`).join(' · ')
+    : null
 
   return (
     <group position={[node.x, node.y, node.z]}>
@@ -91,6 +112,11 @@ function NodeSphere({
             <div style={{ color: '#94a3b8', fontSize: '11px', lineHeight: '1.4' }}>
               {preview}{preview.length >= 90 ? '…' : ''}
             </div>
+            {connSummary && (
+              <div style={{ color: '#94a3b8', fontSize: '10px', marginTop: '4px', borderTop: '1px solid #ffffff11', paddingTop: '4px' }}>
+                {connSummary}
+              </div>
+            )}
           </div>
         </Html>
       )}
@@ -98,37 +124,74 @@ function NodeSphere({
   )
 }
 
-function Edges({ edges, nodeById }: { edges: SimEdge3D[], nodeById: Record<string, SimNode3D> }) {
-  const positions = useMemo(() => {
+function Edges({
+  simEdges,
+  userConnections,
+  nodeById,
+}: {
+  simEdges: SimEdge3D[]
+  userConnections: Connection[]
+  nodeById: Record<string, SimNode3D>
+}) {
+  // Similarity edges (purple, dim)
+  const simPositions = useMemo(() => {
     const pts: number[] = []
-    for (const edge of edges) {
+    for (const edge of simEdges) {
       const src = nodeById[edge.source_id]
       const tgt = nodeById[edge.target_id]
       if (!src || !tgt) continue
       pts.push(src.x, src.y, src.z, tgt.x, tgt.y, tgt.z)
     }
     return new Float32Array(pts)
-  }, [edges, nodeById])
+  }, [simEdges, nodeById])
 
-  if (positions.length === 0) return null
+  // User connections — one buffer per type
+  const connPositionsByType = useMemo(() => {
+    const byType: Partial<Record<ConnectionType, number[]>> = {}
+    for (const conn of userConnections) {
+      const srcNode = Object.values(nodeById).find(n => n.item_id === conn.source_item_id)
+      const tgtNode = Object.values(nodeById).find(n => n.item_id === conn.target_item_id)
+      if (!srcNode || !tgtNode) continue
+      if (!byType[conn.type]) byType[conn.type] = []
+      byType[conn.type]!.push(srcNode.x, srcNode.y, srcNode.z, tgtNode.x, tgtNode.y, tgtNode.z)
+    }
+    return byType
+  }, [userConnections, nodeById])
 
   return (
-    <lineSegments>
-      <bufferGeometry>
-        <bufferAttribute attach="attributes-position" args={[positions, 3]} />
-      </bufferGeometry>
-      <lineBasicMaterial color="#7c6af7" opacity={0.55} transparent depthWrite={false} />
-    </lineSegments>
+    <>
+      {simPositions.length > 0 && (
+        <lineSegments>
+          <bufferGeometry>
+            <bufferAttribute attach="attributes-position" args={[simPositions, 3]} />
+          </bufferGeometry>
+          <lineBasicMaterial color="#7c6af7" opacity={0.35} transparent depthWrite={false} />
+        </lineSegments>
+      )}
+      {(Object.entries(connPositionsByType) as [ConnectionType, number[]][]).map(([type, pts]) => {
+        const arr = new Float32Array(pts)
+        return (
+          <lineSegments key={type}>
+            <bufferGeometry>
+              <bufferAttribute attach="attributes-position" args={[arr, 3]} />
+            </bufferGeometry>
+            <lineBasicMaterial color={CONN_COLORS[type]} opacity={0.8} transparent depthWrite={false} />
+          </lineSegments>
+        )
+      })}
+    </>
   )
 }
 
 function Scene({
   nodes,
   edges,
+  userConnections,
   onSelectItem,
 }: {
   nodes: SimNode3D[]
   edges: SimEdge3D[]
+  userConnections: Connection[]
   onSelectItem: (itemId: string) => void
 }) {
   const nodeById = useMemo(() => {
@@ -143,9 +206,9 @@ function Scene({
       <pointLight position={[0, 0, 0]} intensity={1} />
       <OrbitControls makeDefault />
       <CameraKeyboard />
-      <Edges edges={edges} nodeById={nodeById} />
+      <Edges simEdges={edges} userConnections={userConnections} nodeById={nodeById} />
       {nodes.map(n => (
-        <NodeSphere key={n.id} node={n} onSelect={onSelectItem} />
+        <NodeSphere key={n.id} node={n} onSelect={onSelectItem} userConnections={userConnections} />
       ))}
     </>
   )
@@ -154,7 +217,7 @@ function Scene({
 // ── Main overlay component ─────────────────────────────────────────────────
 
 export function ThreeDMindMap({ onClose }: { onClose: () => void }) {
-  const { nodes, edges, loading, error } = useMindMap3D()
+  const { nodes, edges, userConnections, loading, error } = useMindMap3D()
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null)
 
   // Escape closes the overlay (unless a modal is open)
@@ -211,7 +274,7 @@ export function ThreeDMindMap({ onClose }: { onClose: () => void }) {
       {!loading && !error && nodes.length > 0 && (
         <div className="flex-1">
           <Canvas camera={{ position: [0, 0, 80], fov: 60 }}>
-            <Scene nodes={nodes} edges={edges} onSelectItem={setSelectedItemId} />
+            <Scene nodes={nodes} edges={edges} userConnections={userConnections} onSelectItem={setSelectedItemId} />
           </Canvas>
         </div>
       )}
