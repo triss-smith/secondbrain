@@ -128,10 +128,12 @@ function Edges({
   simEdges,
   userConnections,
   nodeById,
+  nodeByItemId,
 }: {
   simEdges: SimEdge3D[]
   userConnections: Connection[]
   nodeById: Record<string, SimNode3D>
+  nodeByItemId: Record<string, SimNode3D>
 }) {
   // Similarity edges (purple, dim)
   const simPositions = useMemo(() => {
@@ -149,14 +151,17 @@ function Edges({
   const connPositionsByType = useMemo(() => {
     const byType: Partial<Record<ConnectionType, number[]>> = {}
     for (const conn of userConnections) {
-      const srcNode = Object.values(nodeById).find(n => n.item_id === conn.source_item_id)
-      const tgtNode = Object.values(nodeById).find(n => n.item_id === conn.target_item_id)
+      const srcNode = nodeByItemId[conn.source_item_id]
+      const tgtNode = nodeByItemId[conn.target_item_id]
       if (!srcNode || !tgtNode) continue
       if (!byType[conn.type]) byType[conn.type] = []
       byType[conn.type]!.push(srcNode.x, srcNode.y, srcNode.z, tgtNode.x, tgtNode.y, tgtNode.z)
     }
-    return byType
-  }, [userConnections, nodeById])
+    // Convert to Float32Array here, not in render
+    return Object.fromEntries(
+      Object.entries(byType).map(([type, pts]) => [type, new Float32Array(pts!)])
+    ) as Partial<Record<ConnectionType, Float32Array>>
+  }, [userConnections, nodeByItemId])
 
   return (
     <>
@@ -168,17 +173,14 @@ function Edges({
           <lineBasicMaterial color="#7c6af7" opacity={0.35} transparent depthWrite={false} />
         </lineSegments>
       )}
-      {(Object.entries(connPositionsByType) as [ConnectionType, number[]][]).map(([type, pts]) => {
-        const arr = new Float32Array(pts)
-        return (
-          <lineSegments key={type}>
-            <bufferGeometry>
-              <bufferAttribute attach="attributes-position" args={[arr, 3]} />
-            </bufferGeometry>
-            <lineBasicMaterial color={CONN_COLORS[type]} opacity={0.8} transparent depthWrite={false} />
-          </lineSegments>
-        )
-      })}
+      {(Object.entries(connPositionsByType) as [ConnectionType, Float32Array][]).map(([type, arr]) => (
+        <lineSegments key={type}>
+          <bufferGeometry>
+            <bufferAttribute attach="attributes-position" args={[arr, 3]} />
+          </bufferGeometry>
+          <lineBasicMaterial color={CONN_COLORS[type]} opacity={0.8} transparent depthWrite={false} />
+        </lineSegments>
+      ))}
     </>
   )
 }
@@ -200,13 +202,19 @@ function Scene({
     return m
   }, [nodes])
 
+  const nodeByItemId = useMemo(() => {
+    const m: Record<string, SimNode3D> = {}
+    nodes.forEach(n => { m[n.item_id] = n })
+    return m
+  }, [nodes])
+
   return (
     <>
       <ambientLight intensity={0.4} />
       <pointLight position={[0, 0, 0]} intensity={1} />
       <OrbitControls makeDefault />
       <CameraKeyboard />
-      <Edges simEdges={edges} userConnections={userConnections} nodeById={nodeById} />
+      <Edges simEdges={edges} userConnections={userConnections} nodeById={nodeById} nodeByItemId={nodeByItemId} />
       {nodes.map(n => (
         <NodeSphere key={n.id} node={n} onSelect={onSelectItem} userConnections={userConnections} />
       ))}
