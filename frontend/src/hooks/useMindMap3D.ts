@@ -56,9 +56,9 @@ export function useMindMap3D(): MindMap3DState {
           content_type: n.data.content_type as ContentType,
           snippet: n.data.snippet,
           summary: n.data.summary,
-          x: (Math.random() - 0.5) * 200,
-          y: (Math.random() - 0.5) * 200,
-          z: (Math.random() - 0.5) * 200,
+          x: (Math.random() - 0.5) * 40,
+          y: (Math.random() - 0.5) * 40,
+          z: (Math.random() - 0.5) * 40,
           degree: degreeMap[n.id] ?? 0,
         }))
 
@@ -82,9 +82,9 @@ export function useMindMap3D(): MindMap3DState {
             forceLink<SimNode3D>(simLinks)
               .id((d: SimNode3D) => d.id)
               .strength((l: SimLink<SimNode3D>) => (((l as unknown) as { similarity: number }).similarity ?? 0.5) * 0.4)
-              .distance(80)
+              .distance(12)
           )
-          .force('charge', forceManyBody<SimNode3D>().strength(-250))
+          .force('charge', forceManyBody<SimNode3D>().strength(-15))
           .force('center', forceCenter<SimNode3D>(0, 0, 0))
           .stop()
 

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Canvas, useThree } from '@react-three/fiber'
-import { OrbitControls, Html, Line } from '@react-three/drei'
+import { OrbitControls, Html } from '@react-three/drei'
 import { X } from 'lucide-react'
 import { useMindMap3D, type SimNode3D, type SimEdge3D } from '../hooks/useMindMap3D'
 import { ItemDetailModal } from './ItemDetailModal'
@@ -98,30 +98,27 @@ function NodeSphere({
   )
 }
 
-function EdgeLine({
-  edge,
-  nodeById,
-}: {
-  edge: SimEdge3D
-  nodeById: Record<string, SimNode3D>
-}) {
-  const src = nodeById[edge.source_id]
-  const tgt = nodeById[edge.target_id]
-  if (!src || !tgt) return null
+function Edges({ edges, nodeById }: { edges: SimEdge3D[], nodeById: Record<string, SimNode3D> }) {
+  const positions = useMemo(() => {
+    const pts: number[] = []
+    for (const edge of edges) {
+      const src = nodeById[edge.source_id]
+      const tgt = nodeById[edge.target_id]
+      if (!src || !tgt) continue
+      pts.push(src.x, src.y, src.z, tgt.x, tgt.y, tgt.z)
+    }
+    return new Float32Array(pts)
+  }, [edges, nodeById])
 
-  const opacity = Math.round((0.1 + (edge.similarity - 0.55) * (0.5 / 0.45)) * 100) / 100
+  if (positions.length === 0) return null
 
   return (
-    <Line
-      points={[
-        [src.x, src.y, src.z],
-        [tgt.x, tgt.y, tgt.z],
-      ]}
-      color="#7c6af7"
-      lineWidth={1}
-      opacity={Math.max(0.08, Math.min(0.6, opacity))}
-      transparent
-    />
+    <lineSegments>
+      <bufferGeometry>
+        <bufferAttribute attach="attributes-position" args={[positions, 3]} />
+      </bufferGeometry>
+      <lineBasicMaterial color="#7c6af7" opacity={0.55} transparent depthWrite={false} />
+    </lineSegments>
   )
 }
 
@@ -146,9 +143,7 @@ function Scene({
       <pointLight position={[0, 0, 0]} intensity={1} />
       <OrbitControls makeDefault />
       <CameraKeyboard />
-      {edges.map(e => (
-        <EdgeLine key={`${e.source_id}-${e.target_id}`} edge={e} nodeById={nodeById} />
-      ))}
+      <Edges edges={edges} nodeById={nodeById} />
       {nodes.map(n => (
         <NodeSphere key={n.id} node={n} onSelect={onSelectItem} />
       ))}
@@ -215,7 +210,7 @@ export function ThreeDMindMap({ onClose }: { onClose: () => void }) {
 
       {!loading && !error && nodes.length > 0 && (
         <div className="flex-1">
-          <Canvas camera={{ position: [0, 0, 400], fov: 60 }}>
+          <Canvas camera={{ position: [0, 0, 80], fov: 60 }}>
             <Scene nodes={nodes} edges={edges} onSelectItem={setSelectedItemId} />
           </Canvas>
         </div>
