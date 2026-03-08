@@ -3,6 +3,7 @@ from typing import AsyncIterator
 from backend.ai.embed import embed_text
 from backend.ai.client import chat_stream, strip_think_tags
 from backend.store import vectors
+from backend.store.db import SessionLocal, Connection
 
 
 SYSTEM_PROMPT = """You are the user's Second Brain — an AI assistant with access to their personal knowledge base.
@@ -26,12 +27,50 @@ async def query_stream(
         return
 
     context = _format_context(chunks)
+
+    # Fetch explicit connections for retrieved items
+    retrieved_ids = list({c["item_id"] for c in chunks})
+    connection_context = _format_connections(retrieved_ids)
+
     messages = (history or []) + [{"role": "user", "content": question}]
 
-    system = f"{SYSTEM_PROMPT}\n\n---\nKNOWLEDGE BASE CONTEXT:\n{context}\n---"
+    connection_block = f"\n\nEXPLICIT RELATIONSHIPS:\n{connection_context}" if connection_context else ""
+    system = f"{SYSTEM_PROMPT}\n\n---\nKNOWLEDGE BASE CONTEXT:\n{context}{connection_block}\n---"
 
     async for token in strip_think_tags(chat_stream(messages, system=system)):
         yield token
+
+
+def _format_connections(item_ids: list[str]) -> str:
+    if not item_ids:
+        return ""
+    db = SessionLocal()
+    try:
+        from sqlalchemy import or_
+        connections = db.query(Connection).filter(
+            or_(
+                Connection.source_item_id.in_(item_ids),
+                Connection.target_item_id.in_(item_ids),
+            )
+        ).all()
+    finally:
+        db.close()
+
+    if not connections:
+        return ""
+
+    TYPE_LABELS = {
+        "related": "is related to",
+        "source": "is a source for",
+        "inspired_by": "was inspired by",
+        "contradicts": "contradicts",
+    }
+
+    lines = []
+    for c in connections:
+        label = TYPE_LABELS.get(c.type, c.type)
+        lines.append(f'- Item "{c.source_item_id}" {label} item "{c.target_item_id}"')
+    return "\n".join(lines)
 
 
 def _format_context(chunks: list[dict]) -> str:
