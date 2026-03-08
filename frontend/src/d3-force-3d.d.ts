@@ -29,8 +29,9 @@ declare module 'd3-force-3d' {
     strength(value: number): this
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-empty-interface
-  interface ForceCenter {}
+  interface ForceCenter {
+    strength(value: number): this
+  }
 
   export function forceSimulation<N>(nodes?: N[], nDim?: number): Simulation<N>
   export function forceLink<N>(links?: SimLink<N>[]): ForceLink<N>
