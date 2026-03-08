@@ -81,7 +81,7 @@ export function useMindMap3D(): MindMap3DState {
             'link',
             forceLink<SimNode3D>(simLinks)
               .id((d: SimNode3D) => d.id)
-              .strength((l: SimLink<SimNode3D> & { similarity: number }) => l.similarity * 0.4)
+              .strength((l: SimLink<SimNode3D>) => (((l as unknown) as { similarity: number }).similarity ?? 0.5) * 0.4)
               .distance(80)
           )
           .force('charge', forceManyBody<SimNode3D>().strength(-250))
