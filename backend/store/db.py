@@ -74,6 +74,19 @@ class Page(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 
+class Connection(Base):
+    __tablename__ = "connections"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    source_item_id = Column(String, ForeignKey("items.id", ondelete="CASCADE"), nullable=False)
+    target_item_id = Column(String, ForeignKey("items.id", ondelete="CASCADE"), nullable=False)
+    type = Column(String, nullable=False, default="related")
+    created_at = Column(DateTime, default=datetime.utcnow)
+    __table_args__ = (
+        __import__('sqlalchemy').UniqueConstraint('source_item_id', 'target_item_id', name='uq_connection_pair'),
+    )
+
+
 Base.metadata.create_all(bind=engine)
 
 # Migrate existing tables — add columns that may not exist yet
