@@ -69,6 +69,37 @@ def compute_mind_map(threshold: float = 0.55) -> dict:
                     }
                 )
 
+    # Build category hub nodes and item→hub edges
+    category_items: dict[str, list[str]] = {}
+    for item in items:
+        if item.id not in item_embeddings:
+            continue
+        cat = (item.category or "").strip()
+        if cat:
+            category_items.setdefault(cat, []).append(item.id)
+
+    for cat, member_ids in category_items.items():
+        hub_id = f"cat-{cat.lower().replace(' ', '_')}"
+        nodes.append({
+            "id": hub_id,
+            "type": "categoryHub",
+            "data": {
+                "node_type": "category",
+                "label": cat,
+                "member_count": len(member_ids),
+            },
+            "position": {"x": 0, "y": 0},
+        })
+        for item_id in member_ids:
+            edges.append({
+                "id": f"cat-edge-{hub_id}-{item_id}",
+                "source": hub_id,
+                "target": f"mm-{item_id}",
+                "type": "categoryLink",
+                "data": {"similarity": 0.0},
+                "style": {},
+            })
+
     return {"nodes": nodes, "edges": edges}
 
 
