@@ -19,6 +19,7 @@ import { getSettings, getItemSimilarities } from '../api'
 import { categoryLayout, similarityLayout } from './layout'
 import { useBoard } from '../hooks/useBoard'
 import type { Item, SourceNodeData } from '../types'
+import { ManualEdge } from './edges/ManualEdge'
 import { SemanticEdge } from './edges/SemanticEdge'
 import { SourceChatEdge } from './edges/SourceChatEdge'
 import { ChatNode } from './nodes/ChatNode'
@@ -36,6 +37,7 @@ const NODE_TYPES = {
 const EDGE_TYPES = {
   semantic: SemanticEdge,
   'source-chat': SourceChatEdge,
+  manual: ManualEdge,
 }
 
 interface Props {
