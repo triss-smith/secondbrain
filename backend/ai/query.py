@@ -1,9 +1,11 @@
 from typing import AsyncIterator
 
+from sqlalchemy import or_
+
 from backend.ai.embed import embed_text
 from backend.ai.client import chat_stream, strip_think_tags
 from backend.store import vectors
-from backend.store.db import SessionLocal, Connection
+from backend.store.db import SessionLocal, Connection, Item
 
 
 SYSTEM_PROMPT = """You are the user's Second Brain — an AI assistant with access to their personal knowledge base.
@@ -11,6 +13,13 @@ SYSTEM_PROMPT = """You are the user's Second Brain — an AI assistant with acce
 Answer questions using ONLY the context provided below. If the context doesn't contain enough information to answer, say so clearly.
 Always cite your sources by referencing the item title in brackets, e.g. [How to Build a Startup].
 Be concise, insightful, and direct. Use plain text only — no markdown, no bullet points with asterisks, no bold or italic markers."""
+
+TYPE_LABELS = {
+    "related": "is related to",
+    "source": "is a source for",
+    "inspired_by": "was inspired by",
+    "contradicts": "contradicts",
+}
 
 
 async def query_stream(
@@ -46,30 +55,24 @@ def _format_connections(item_ids: list[str]) -> str:
         return ""
     db = SessionLocal()
     try:
-        from sqlalchemy import or_
         connections = db.query(Connection).filter(
-            or_(
-                Connection.source_item_id.in_(item_ids),
-                Connection.target_item_id.in_(item_ids),
-            )
+            Connection.source_item_id.in_(item_ids),
+            Connection.target_item_id.in_(item_ids),
         ).all()
+        if not connections:
+            return ""
+        # Collect all item IDs involved in connections
+        all_ids = {c.source_item_id for c in connections} | {c.target_item_id for c in connections}
+        titles = {i.id: i.title for i in db.query(Item).filter(Item.id.in_(all_ids)).all()}
     finally:
         db.close()
-
-    if not connections:
-        return ""
-
-    TYPE_LABELS = {
-        "related": "is related to",
-        "source": "is a source for",
-        "inspired_by": "was inspired by",
-        "contradicts": "contradicts",
-    }
 
     lines = []
     for c in connections:
         label = TYPE_LABELS.get(c.type, c.type)
-        lines.append(f'- Item "{c.source_item_id}" {label} item "{c.target_item_id}"')
+        src = titles.get(c.source_item_id, c.source_item_id)
+        tgt = titles.get(c.target_item_id, c.target_item_id)
+        lines.append(f'- "{src}" {label} "{tgt}"')
     return "\n".join(lines)
 
 
