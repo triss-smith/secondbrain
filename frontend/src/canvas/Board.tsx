@@ -65,10 +65,33 @@ export function Board({ isDark = true }: Props) {
 
   // Load board state
   useEffect(() => {
-    if (board?.state) {
-      setNodes(board.state.nodes as Node[] ?? [])
-      setEdges(board.state.edges ?? [])
-    }
+    if (!board?.state) return
+
+    const baseNodes = board.state.nodes as Node[] ?? []
+    const baseEdges = board.state.edges ?? []
+    setNodes(baseNodes)
+
+    // Fetch user connections and merge as manual edges
+    listConnections().then(conns => {
+      // Build item_id → canvas node id lookup
+      const itemToNodeId: Record<string, string> = {}
+      for (const n of baseNodes) {
+        const item = (n.data as SourceNodeData)?.item
+        if (item) itemToNodeId[item.id] = n.id
+      }
+
+      const manualEdges = conns
+        .filter(c => itemToNodeId[c.source_item_id] && itemToNodeId[c.target_item_id])
+        .map(c => ({
+          id: `manual-${c.id}`,
+          source: itemToNodeId[c.source_item_id],
+          target: itemToNodeId[c.target_item_id],
+          type: 'manual' as const,
+          data: { conn_id: c.id, type: c.type },
+        }))
+
+      setEdges([...baseEdges, ...manualEdges])
+    }).catch(() => setEdges(baseEdges))
   }, [board?.id])
 
   useEffect(() => {
@@ -94,7 +117,8 @@ export function Board({ isDark = true }: Props) {
   function scheduleSave(ns = nodes, es = edges) {
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
     saveTimerRef.current = setTimeout(() => {
-      saveState({ nodes: ns as never[], edges: es })
+      const persistEdges = es.filter(e => e.type !== 'manual')
+      saveState({ nodes: ns as never[], edges: persistEdges })
     }, 1500)
   }
 
@@ -234,6 +258,18 @@ export function Board({ isDark = true }: Props) {
       )
     }
 
+    function onRemoveManualEdge(e: Event) {
+      const { edge_id } = (e as CustomEvent).detail
+      setEdges(prev => prev.filter(e => e.id !== edge_id))
+    }
+
+    function onUpdateManualEdge(e: Event) {
+      const { edge_id, type } = (e as CustomEvent).detail
+      setEdges(prev => prev.map(e =>
+        e.id === edge_id ? { ...e, data: { ...e.data, type } } : e
+      ))
+    }
+
     window.addEventListener('open-chat', onOpenChat)
     window.addEventListener('remove-node', onRemoveNode)
     window.addEventListener('remove-chat-node', onRemoveChatNode)
@@ -241,6 +277,8 @@ export function Board({ isDark = true }: Props) {
     window.addEventListener('item-deleted', onItemDeleted)
     window.addEventListener('remove-semantic-edge', onRemoveSemanticEdge)
     window.addEventListener('remove-source-chat-edge', onRemoveSourceChatEdge)
+    window.addEventListener('remove-manual-edge', onRemoveManualEdge)
+    window.addEventListener('update-manual-edge', onUpdateManualEdge)
 
     return () => {
       window.removeEventListener('open-chat', onOpenChat)
@@ -250,6 +288,8 @@ export function Board({ isDark = true }: Props) {
       window.removeEventListener('item-deleted', onItemDeleted)
       window.removeEventListener('remove-semantic-edge', onRemoveSemanticEdge)
       window.removeEventListener('remove-source-chat-edge', onRemoveSourceChatEdge)
+      window.removeEventListener('remove-manual-edge', onRemoveManualEdge)
+      window.removeEventListener('update-manual-edge', onUpdateManualEdge)
     }
   }, [nodes, edges, board?.id])
 
