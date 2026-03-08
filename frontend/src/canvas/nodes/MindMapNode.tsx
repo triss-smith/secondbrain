@@ -1,10 +1,31 @@
 import { useState } from 'react'
 import { type NodeProps } from 'reactflow'
 import { X } from 'lucide-react'
-import type { MindMapNodeData } from '../../types'
 import { CONTENT_TYPE_COLORS, CONTENT_TYPE_LABELS } from '../nodeUtils'
 import { ItemDetailModal } from '../../components/ItemDetailModal'
-import type { Item } from '../../types'
+import type { Item, ContentType } from '../../types'
+
+interface MindMapItem {
+  id: string
+  item_id: string
+  label: string
+  content_type: ContentType
+  thumbnail?: string | null
+  summary?: string
+  snippet?: string
+}
+
+interface MindMapEdge {
+  id: string
+  source: string
+  target: string
+  similarity: number
+}
+
+interface MindMapNodeData {
+  nodes: MindMapItem[]
+  edges: MindMapEdge[]
+}
 
 export function MindMapNode({ data, selected, id }: NodeProps<MindMapNodeData>) {
   const { nodes, edges } = data
@@ -70,7 +91,7 @@ export function MindMapNode({ data, selected, id }: NodeProps<MindMapNodeData>) 
           {placed.map(n => {
             const color = CONTENT_TYPE_COLORS[n.content_type] ?? '#7c6af7'
             const label = CONTENT_TYPE_LABELS[n.content_type]
-            const preview = ((n as {summary?: string; snippet?: string}).summary || (n as {snippet?: string}).snippet || '').slice(0, 40)
+            const preview = (n.summary || n.snippet || '').slice(0, 40)
 
             return (
               <g

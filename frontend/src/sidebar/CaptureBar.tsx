@@ -75,7 +75,7 @@ export function CaptureBar({ onIngested }: Props) {
       {noteOpen && (
         <NoteModal
           onClose={() => setNoteOpen(false)}
-          onSubmit={text => submit(text)}
+          onSubmit={async text => { await submit(text) }}
           isLoading={isLoading}
         />
       )}
