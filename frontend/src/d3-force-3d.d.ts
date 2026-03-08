@@ -26,7 +26,7 @@ declare module 'd3-force-3d' {
   }
 
   interface ForceManyBody<N> {
-    strength(value: number): this
+    strength(value: number | ((node: N) => number)): this
   }
 
   interface ForceCenter {

@@ -4,16 +4,19 @@ import { getMindMap, listConnections } from '../api'
 import type { ContentType, Connection } from '../types'
 
 export interface SimNode3D {
-  id: string          // "mm-{item_id}" — matches backend node id
-  item_id: string
+  id: string
+  item_id: string        // "" for category hubs
   label: string
-  content_type: ContentType
+  content_type: ContentType | ''
   snippet: string
   summary: string
   x: number
   y: number
   z: number
   degree: number
+  node_type: 'item' | 'category'
+  category: string       // category name for hubs, item's category for items (leave '' for now — Task 3 will fill it)
+  member_count?: number  // only on category hubs
 }
 
 export interface SimEdge3D {
@@ -23,7 +26,8 @@ export interface SimEdge3D {
 }
 
 interface MindMap3DState {
-  nodes: SimNode3D[]
+  nodes: SimNode3D[]         // item nodes only
+  categoryNodes: SimNode3D[] // hub nodes only
   edges: SimEdge3D[]
   userConnections: Connection[]
   loading: boolean
@@ -33,6 +37,7 @@ interface MindMap3DState {
 export function useMindMap3D(): MindMap3DState {
   const [state, setState] = useState<MindMap3DState>({
     nodes: [],
+    categoryNodes: [],
     edges: [],
     userConnections: [],
     loading: true,
@@ -50,25 +55,28 @@ export function useMindMap3D(): MindMap3DState {
           degreeMap[e.target] = (degreeMap[e.target] ?? 0) + 1
         })
 
-        // Build sim nodes with initial random 3D positions
-        const simNodes: SimNode3D[] = raw.nodes.map(n => ({
-          id: n.id,
-          item_id: n.data.item_id,
-          label: n.data.label,
-          content_type: n.data.content_type as ContentType,
-          snippet: n.data.snippet,
-          summary: n.data.summary,
-          x: (Math.random() - 0.5) * 40,
-          y: (Math.random() - 0.5) * 40,
-          z: (Math.random() - 0.5) * 40,
-          degree: degreeMap[n.id] ?? 0,
-        }))
+        const allSimNodes: SimNode3D[] = raw.nodes.map(n => {
+          const isCategory = (n as any).type === 'categoryHub'
+          return {
+            id: n.id,
+            item_id: isCategory ? '' : n.data.item_id,
+            label: n.data.label,
+            content_type: isCategory ? '' : (n.data.content_type as ContentType),
+            snippet: isCategory ? '' : (n.data.snippet ?? ''),
+            summary: isCategory ? '' : (n.data.summary ?? ''),
+            x: (Math.random() - 0.5) * 40,
+            y: (Math.random() - 0.5) * 40,
+            z: (Math.random() - 0.5) * 40,
+            degree: degreeMap[n.id] ?? 0,
+            node_type: isCategory ? 'category' : 'item',
+            category: isCategory ? n.data.label : '',
+            member_count: isCategory ? ((n.data as any).member_count as number | undefined) : undefined,
+          } as SimNode3D
+        })
 
-        // Build id → node map for link resolution
         const nodeById: Record<string, SimNode3D> = {}
-        simNodes.forEach(n => { nodeById[n.id] = n })
+        allSimNodes.forEach(n => { nodeById[n.id] = n })
 
-        // Build sim links (d3 will replace source/target strings with node objects)
         const simLinks: (SimLink<SimNode3D> & { similarity: number })[] = raw.edges
           .filter(e => nodeById[e.source] && nodeById[e.target])
           .map(e => ({
@@ -77,30 +85,55 @@ export function useMindMap3D(): MindMap3DState {
             similarity: e.data.similarity ?? 0.5,
           }))
 
-        // Run 3D force simulation synchronously
-        const sim = forceSimulation<SimNode3D>(simNodes, 3)
+        const sim = forceSimulation<SimNode3D>(allSimNodes, 3)
           .force(
             'link',
             forceLink<SimNode3D>(simLinks)
               .id((d: SimNode3D) => d.id)
-              .strength((l: SimLink<SimNode3D>) => (((l as unknown) as { similarity: number }).similarity ?? 0.5) * 0.4)
-              .distance(12)
+              .strength((l: SimLink<SimNode3D>) => {
+                const src = l.source as SimNode3D
+                const tgt = l.target as SimNode3D
+                if (src.node_type === 'category' || tgt.node_type === 'category') return 0.5
+                return (((l as unknown) as { similarity: number }).similarity ?? 0.5) * 0.4
+              })
+              .distance((l: SimLink<SimNode3D>) => {
+                const src = l.source as SimNode3D
+                const tgt = l.target as SimNode3D
+                if (src.node_type === 'category' || tgt.node_type === 'category') return 18
+                return 12
+              })
           )
-          .force('charge', forceManyBody<SimNode3D>().strength(-15))
+          .force('charge', forceManyBody<SimNode3D>().strength((n: SimNode3D) =>
+            n.node_type === 'category' ? -120 : -15
+          ))
           .force('center', forceCenter<SimNode3D>(0, 0, 0))
           .stop()
 
         for (let i = 0; i < 300; i++) sim.tick()
 
-        // After sim, d3 has mutated simNodes with final x/y/z.
-        // Rebuild edges using node ids (source/target are now node objects).
-        const settledEdges: SimEdge3D[] = simLinks.map(l => ({
-          source_id: typeof l.source === 'string' ? l.source : (l.source as SimNode3D).id,
-          target_id: typeof l.target === 'string' ? l.target : (l.target as SimNode3D).id,
-          similarity: l.similarity,
-        }))
+        const settledEdges: SimEdge3D[] = simLinks
+          .filter(l => {
+            const src = l.source as SimNode3D
+            const tgt = l.target as SimNode3D
+            return src.node_type === 'item' && tgt.node_type === 'item'
+          })
+          .map(l => ({
+            source_id: (l.source as SimNode3D).id,
+            target_id: (l.target as SimNode3D).id,
+            similarity: l.similarity,
+          }))
 
-        setState({ nodes: simNodes, edges: settledEdges, userConnections: conns, loading: false, error: null })
+        const itemNodes = allSimNodes.filter(n => n.node_type === 'item')
+        const categoryNodes = allSimNodes.filter(n => n.node_type === 'category')
+
+        setState({
+          nodes: itemNodes,
+          categoryNodes,
+          edges: settledEdges,
+          userConnections: conns,
+          loading: false,
+          error: null,
+        })
       })
       .catch(err => {
         setState(prev => ({ ...prev, loading: false, error: String(err) }))
