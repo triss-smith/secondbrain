@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Column, DateTime, ForeignKey, Integer, JSON, String, Text, create_engine
+from sqlalchemy import Column, DateTime, ForeignKey, Integer, JSON, String, Text, UniqueConstraint, create_engine
 from sqlalchemy.orm import declarative_base, relationship, sessionmaker
 
 from backend.config import settings
@@ -83,7 +83,7 @@ class Connection(Base):
     type = Column(String, nullable=False, default="related")
     created_at = Column(DateTime, default=datetime.utcnow)
     __table_args__ = (
-        __import__('sqlalchemy').UniqueConstraint('source_item_id', 'target_item_id', name='uq_connection_pair'),
+        UniqueConstraint('source_item_id', 'target_item_id', name='uq_connection_pair'),
     )
 
 

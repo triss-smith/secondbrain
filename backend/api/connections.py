@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
@@ -43,7 +44,7 @@ def create_connection(body: ConnectionCreate, db: Session = Depends(get_db)):
         target_item_id=body.target_item_id
     ).first()
     if existing:
-        return _serialize(existing)
+        return JSONResponse(status_code=200, content=_serialize(existing))
     conn = Connection(
         source_item_id=body.source_item_id,
         target_item_id=body.target_item_id,
