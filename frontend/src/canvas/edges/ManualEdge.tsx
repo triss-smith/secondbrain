@@ -38,11 +38,13 @@ export function ManualEdge({
   const color = TYPE_COLORS[connType]
 
   function handleDelete() {
+    if (!connId) return
     deleteConnection(connId).catch(() => {})
     window.dispatchEvent(new CustomEvent('remove-manual-edge', { detail: { edge_id: id } }))
   }
 
   function handleChangeType(newType: ConnectionType) {
+    if (!connId) return
     updateConnection(connId, newType).catch(() => {})
     window.dispatchEvent(new CustomEvent('update-manual-edge', { detail: { edge_id: id, type: newType } }))
     setShowMenu(false)
