@@ -1,4 +1,4 @@
-import { MessageSquarePlus, ZoomIn, ZoomOut, Maximize2, LayoutGrid } from 'lucide-react'
+import { MessageSquarePlus, ZoomIn, ZoomOut, Maximize2, LayoutGrid, Box } from 'lucide-react'
 import { useReactFlow } from 'reactflow'
 
 interface Props {
@@ -6,9 +6,10 @@ interface Props {
   onAddChat: () => void
   onOrganize: () => void
   organizeLabel: 'category' | 'similarity'
+  on3DView: () => void
 }
 
-export function Toolbar({ onAddChat, onOrganize, organizeLabel }: Props) {
+export function Toolbar({ onAddChat, onOrganize, organizeLabel, on3DView }: Props) {
   const { zoomIn, zoomOut, fitView } = useReactFlow()
 
   return (
@@ -23,6 +24,13 @@ export function Toolbar({ onAddChat, onOrganize, organizeLabel }: Props) {
       <ToolButton onClick={onOrganize} title={`Auto-organize (${organizeLabel === 'category' ? 'by category' : 'by similarity'})`}>
         <LayoutGrid size={15} />
         <span className="text-[11px]">Organize</span>
+      </ToolButton>
+
+      <div className="w-px h-5 bg-surface-3 mx-1" />
+
+      <ToolButton onClick={on3DView} title="3D mind map">
+        <Box size={15} />
+        <span className="text-[11px]">3D View</span>
       </ToolButton>
 
       <div className="w-px h-5 bg-surface-3 mx-1" />
