@@ -131,7 +131,7 @@ export function Board({ isDark = true }: Props) {
           scheduleSave(updated, updatedEdges)
           return updated
         })
-      } else {
+      } else if (fromNode?.type === 'source' && toNode?.type === 'source') {
         // source-to-source: show type picker
         setPendingConnection({
           connection,
