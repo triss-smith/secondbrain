@@ -15,10 +15,11 @@ import ReactFlow, {
 } from 'reactflow'
 import 'reactflow/dist/style.css'
 
-import { getSettings, getItemSimilarities } from '../api'
+import { getSettings, getItemSimilarities, createConnection, listConnections } from '../api'
 import { categoryLayout, similarityLayout } from './layout'
 import { useBoard } from '../hooks/useBoard'
-import type { Item, SourceNodeData } from '../types'
+import type { Item, SourceNodeData, Connection as AppConnection, ConnectionType } from '../types'
+import { ConnectionTypePicker } from './ConnectionTypePicker'
 import { ManualEdge } from './edges/ManualEdge'
 import { SemanticEdge } from './edges/SemanticEdge'
 import { SourceChatEdge } from './edges/SourceChatEdge'
@@ -55,6 +56,11 @@ export function Board({ isDark = true }: Props) {
   const [similarityThreshold, setSimilarityThreshold] = useState<number>(0.3)
   const [organizeLabel, setOrganizeLabel] = useState<'category' | 'similarity'>('category')
   const [threeDOpen, setThreeDOpen] = useState(false)
+  const [pendingConnection, setPendingConnection] = useState<{
+    connection: Connection  // React Flow's Connection type
+    x: number
+    y: number
+  } | null>(null)
   const { fitView } = useReactFlow()
 
   // Load board state
@@ -126,9 +132,12 @@ export function Board({ isDark = true }: Props) {
           return updated
         })
       } else {
-        const updated = addEdge({ ...connection, type: 'semantic' }, edges)
-        setEdges(updated)
-        scheduleSave(nodes, updated)
+        // source-to-source: show type picker
+        setPendingConnection({
+          connection,
+          x: window.innerWidth / 2,
+          y: window.innerHeight / 2,
+        })
       }
     },
     [edges, nodes]
@@ -405,6 +414,37 @@ export function Board({ isDark = true }: Props) {
     setTimeout(() => fitView({ padding: 0.15, duration: 500 }), 100)
   }
 
+  async function handlePickType(type: ConnectionType) {
+    if (!pendingConnection) return
+    const { connection } = pendingConnection
+    setPendingConnection(null)
+
+    const fromNode = nodes.find(n => n.id === connection.source)
+    const toNode = nodes.find(n => n.id === connection.target)
+    if (!fromNode || !toNode) return
+
+    const sourceItemId = (fromNode.data as SourceNodeData).item.id
+    const targetItemId = (toNode.data as SourceNodeData).item.id
+
+    try {
+      const conn = await createConnection(sourceItemId, targetItemId, type)
+      const newEdge = {
+        id: `manual-${conn.id}`,
+        source: connection.source!,
+        target: connection.target!,
+        type: 'manual',
+        data: { conn_id: conn.id, type: conn.type },
+      }
+      setEdges(prev => [...prev, newEdge])
+    } catch (e) {
+      console.error('Failed to create connection', e)
+    }
+  }
+
+  function handleDismissConnection() {
+    setPendingConnection(null)
+  }
+
   const cssVar = (name: string) =>
     getComputedStyle(document.documentElement).getPropertyValue(name).trim()
   const accentColor   = cssVar('--color-accent')   || '#7c6af7'
@@ -464,6 +504,14 @@ export function Board({ isDark = true }: Props) {
       )}
     </ReactFlow>
     {threeDOpen && <ThreeDMindMap onClose={() => setThreeDOpen(false)} />}
+    {pendingConnection && (
+      <ConnectionTypePicker
+        x={pendingConnection.x}
+        y={pendingConnection.y}
+        onPick={handlePickType}
+        onDismiss={handleDismissConnection}
+      />
+    )}
     </>
   )
 }
