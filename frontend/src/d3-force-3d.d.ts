@@ -15,7 +15,7 @@ declare module 'd3-force-3d' {
   interface Simulation<N> {
     force(name: string, force: unknown): this
     stop(): this
-    tick(): this
+    tick(): void
   }
 
   interface ForceLink<N> {

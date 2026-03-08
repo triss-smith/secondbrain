@@ -56,7 +56,7 @@ export function useMindMap3D(): MindMap3DState {
         })
 
         const allSimNodes: SimNode3D[] = raw.nodes.map(n => {
-          const isCategory = (n as any).type === 'categoryHub'
+          const isCategory = (n as { type?: string }).type === 'categoryHub'
           return {
             id: n.id,
             item_id: isCategory ? '' : n.data.item_id,
