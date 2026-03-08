@@ -1,5 +1,5 @@
 import axios from 'axios'
-import type { Board, BoardState, Item, Page, SearchResult } from './types'
+import type { Board, BoardState, Connection, ConnectionType, Item, Page, SearchResult } from './types'
 
 const api = axios.create({ baseURL: '/api' })
 
@@ -128,3 +128,16 @@ export interface RawMindMapResponse {
 
 export const getMindMap = () =>
   api.get<RawMindMapResponse>('/mind-map').then(r => r.data)
+
+// Connections
+export const listConnections = () =>
+  api.get<Connection[]>('/connections').then(r => r.data)
+
+export const createConnection = (source_item_id: string, target_item_id: string, type: ConnectionType) =>
+  api.post<Connection>('/connections', { source_item_id, target_item_id, type }).then(r => r.data)
+
+export const updateConnection = (id: number, type: ConnectionType) =>
+  api.patch<Connection>(`/connections/${id}`, { type }).then(r => r.data)
+
+export const deleteConnection = (id: number) =>
+  api.delete(`/connections/${id}`).then(r => r.data)

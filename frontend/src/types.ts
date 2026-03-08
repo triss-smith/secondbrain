@@ -74,6 +74,16 @@ export interface ChatMessage {
   content: string
 }
 
+export type ConnectionType = 'related' | 'source' | 'inspired_by' | 'contradicts'
+
+export interface Connection {
+  id: number
+  source_item_id: string
+  target_item_id: string
+  type: ConnectionType
+  created_at: string
+}
+
 export interface Page {
   id: string
   title: string
