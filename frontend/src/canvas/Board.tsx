@@ -25,6 +25,7 @@ import { ChatNode } from './nodes/ChatNode'
 import { PageNode } from './nodes/PageNode'
 import { SourceNode } from './nodes/SourceNode'
 import { Toolbar } from './Toolbar'
+import { ThreeDMindMap } from '../components/ThreeDMindMap'
 
 const NODE_TYPES = {
   source: SourceNode,
@@ -51,6 +52,7 @@ export function Board({ isDark = true }: Props) {
   const dismissedSemanticPairsRef = useRef<Set<string>>(new Set())
   const [similarityThreshold, setSimilarityThreshold] = useState<number>(0.3)
   const [organizeLabel, setOrganizeLabel] = useState<'category' | 'similarity'>('category')
+  const [threeDOpen, setThreeDOpen] = useState(false)
   const { fitView } = useReactFlow()
 
   // Load board state
@@ -415,6 +417,7 @@ export function Board({ isDark = true }: Props) {
   }
 
   return (
+    <>
     <ReactFlow
       nodes={nodes}
       edges={edges}
@@ -454,8 +457,11 @@ export function Board({ isDark = true }: Props) {
           onAddChat={() => addChatNode()}
           onOrganize={handleOrganize}
           organizeLabel={organizeLabel}
+          on3DView={() => setThreeDOpen(true)}
         />
       )}
     </ReactFlow>
+    {threeDOpen && <ThreeDMindMap onClose={() => setThreeDOpen(false)} />}
+    </>
   )
 }
