@@ -40,8 +40,8 @@ function NodeSphere({
     <group position={[node.x, node.y, node.z]}>
       <mesh
         onClick={e => { e.stopPropagation(); onSelect(node.item_id) }}
-        onPointerEnter={() => setHovered(true)}
-        onPointerLeave={() => setHovered(false)}
+        onPointerEnter={() => { setHovered(true); document.body.style.cursor = 'pointer' }}
+        onPointerLeave={() => { setHovered(false); document.body.style.cursor = 'default' }}
       >
         <sphereGeometry args={[radius, 16, 16]} />
         <meshStandardMaterial
