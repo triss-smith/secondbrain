@@ -44,6 +44,11 @@ if exist "%EMBED_DIR%\python.exe" (
     installer\python-embed\python.exe installer\get-pip.py --no-warn-script-location
     if errorlevel 1 (echo ERROR: pip install failed. && exit /b 1)
 )
+
+:: Install dependencies into embedded Python (done once at build time, not at install time)
+echo     Installing dependencies into embedded Python...
+installer\python-embed\python.exe -m pip install -r requirements.txt --target installer\python-embed\Lib\site-packages --no-warn-script-location
+if errorlevel 1 (echo ERROR: Dependency install failed. && exit /b 1)
 echo     Done.
 echo.
 

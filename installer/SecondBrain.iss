@@ -41,9 +41,6 @@ Name: "{group}\{#AppName}"; Filename: "{app}\python\{#AppExeName}"; Parameters: 
 ; Desktop (optional)
 Name: "{commondesktop}\{#AppName}"; Filename: "{app}\python\{#AppExeName}"; Parameters: """{app}\installer\launcher.py"""; WorkingDir: "{app}"; IconFilename: "{app}\installer\icon.ico"; Tasks: desktopicon
 
-[Run]
-; Install Python dependencies — shown as a status message, runs hidden
-Filename: "{app}\python\python.exe"; Parameters: "-m pip install -r ""{app}\requirements.txt"" --target ""{app}\python\Lib\site-packages"""; WorkingDir: "{app}"; StatusMsg: "Installing dependencies (this may take several minutes)..."; Flags: runhidden waituntilterminated
 
 [UninstallDelete]
 
