@@ -1,5 +1,4 @@
 # installer/launcher.py
-import os
 import socket
 import subprocess
 import sys
@@ -12,8 +11,8 @@ from pathlib import Path
 def find_free_port() -> int:
     """Bind to port 0 — OS assigns a free port — then release it."""
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.bind(("", 0))
         s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        s.bind(("", 0))
         return s.getsockname()[1]
 
 
@@ -40,13 +39,10 @@ def _python_exe() -> Path:
 
 
 def start_server(port: int) -> subprocess.Popen:
-    env = os.environ.copy()
-    env["PORT"] = str(port)
     return subprocess.Popen(
         [str(_python_exe()), "-m", "uvicorn", "backend.main:app",
          "--host", "127.0.0.1", "--port", str(port)],
         cwd=str(_app_root()),
-        env=env,
         creationflags=subprocess.CREATE_NO_WINDOW,
     )
 
@@ -85,6 +81,17 @@ def main() -> None:
 
     if not wait_for_server(f"{url}/api/health", timeout=60):
         server_proc.terminate()
+        import tkinter as tk
+        from tkinter import messagebox
+        root = tk.Tk()
+        root.withdraw()
+        messagebox.showerror(
+            "Second Brain",
+            "Second Brain failed to start.\n\n"
+            "Please check that your API key is set in:\n"
+            r"C:\Program Files\SecondBrain\.env",
+        )
+        root.destroy()
         sys.exit(1)
 
     webbrowser.open(url)

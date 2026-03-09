@@ -63,7 +63,7 @@ if errorlevel 1 (echo ERROR: Inno Setup compilation failed. && exit /b 1)
 echo     Done.
 echo.
 
-echo [4/4] Build complete!
+echo Build complete!
 echo     Output: dist\SecondBrain-Setup.exe
 echo.
 pause

@@ -45,7 +45,6 @@ Name: "{commondesktop}\{#AppName}"; Filename: "{app}\python\{#AppExeName}"; Para
 Filename: "{app}\python\python.exe"; Parameters: "-m pip install -r ""{app}\requirements.txt"""; WorkingDir: "{app}"; StatusMsg: "Installing dependencies (this may take several minutes)..."; Flags: runhidden waituntilterminated
 
 [UninstallDelete]
-Type: filesandordirs; Name: "{app}\data"
 
 [Code]
 procedure CreateEnvFile();
@@ -82,6 +81,25 @@ begin
       mbInformation, MB_OK) = IDOK then
     begin
       OpenEnvFile();
+    end;
+  end;
+end;
+
+function InitializeUninstall(): Boolean;
+var
+  ResultCode: Integer;
+begin
+  Result := True;
+  if DirExists(ExpandConstant('{app}\data')) then
+  begin
+    if MsgBox(
+      'Do you want to delete your Second Brain data (notes, files, and AI memory)?' + #13#10 +
+      #13#10 +
+      'Click YES to permanently delete all your data.' + #13#10 +
+      'Click NO to keep your data (you can re-import it later).',
+      mbConfirmation, MB_YESNO) = IDYES then
+    begin
+      DelTree(ExpandConstant('{app}\data'), True, True, True);
     end;
   end;
 end;
