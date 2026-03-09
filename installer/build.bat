@@ -74,16 +74,16 @@ if exist "%PFX%" (
     echo [4/4] Signing installer...
 
     :: Find signtool.exe in Windows SDK
-    set SIGNTOOL=
-    for /f "delims=" %%i in ('where signtool 2^>nul') do set SIGNTOOL=%%i
-    if not defined SIGNTOOL (
-        for /r "C:\Program Files (x86)\Windows Kits\10\bin" %%i in (signtool.exe) do set SIGNTOOL=%%i
+    set "SIGNTOOL="
+    for /f "delims=" %%i in ('where signtool 2^>nul') do set "SIGNTOOL=%%i"
+    if "%SIGNTOOL%"=="" (
+        for /r "C:\Program Files (x86)\Windows Kits\10\bin" %%i in (signtool.exe) do set "SIGNTOOL=%%i"
     )
-    if not defined SIGNTOOL (
-        for /r "C:\Program Files\Windows Kits\10\bin" %%i in (signtool.exe) do set SIGNTOOL=%%i
+    if "%SIGNTOOL%"=="" (
+        for /r "C:\Program Files\Windows Kits\10\bin" %%i in (signtool.exe) do set "SIGNTOOL=%%i"
     )
 
-    if not defined SIGNTOOL (
+    if "%SIGNTOOL%"=="" (
         echo     WARNING: signtool.exe not found. Skipping signing.
         echo     Install the Windows SDK to enable signing:
         echo     https://developer.microsoft.com/windows/downloads/windows-sdk/
