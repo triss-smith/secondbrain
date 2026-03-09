@@ -38,6 +38,59 @@ def _python_exe() -> Path:
     return embedded if embedded.exists() else Path(sys.executable)
 
 
+GITHUB_RELEASES_URL = "https://api.github.com/repos/triss-smith/secondbrain/releases/latest"
+
+
+def _parse_version(v: str) -> tuple:
+    return tuple(int(x) for x in v.lstrip("v").strip().split("."))
+
+
+def check_for_update(current_version: str):
+    """Return (latest_version, download_url) if newer, else None."""
+    import json as _json
+    try:
+        req = urllib.request.Request(
+            GITHUB_RELEASES_URL,
+            headers={"Accept": "application/vnd.github+json", "User-Agent": "SecondBrain"},
+        )
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            data = _json.loads(resp.read())
+        tag = data.get("tag_name", "")
+        latest = tag.lstrip("v").strip()
+        if not latest or _parse_version(latest) <= _parse_version(current_version):
+            return None
+        for asset in data.get("assets", []):
+            if asset.get("name", "").endswith(".exe"):
+                return (latest, asset["browser_download_url"])
+        return None
+    except Exception:
+        return None
+
+
+def _read_current_version() -> str:
+    version_file = _app_root() / "VERSION"
+    if version_file.exists():
+        return version_file.read_text(encoding="utf-8").strip()
+    return "0.0.0"
+
+
+def _run_update_check() -> None:
+    """Background thread: check GitHub, write update.json if newer version found."""
+    import json as _json
+    current = _read_current_version()
+    result = check_for_update(current)
+    update_file = _app_root() / "update.json"
+    if result:
+        version, url = result
+        update_file.write_text(
+            _json.dumps({"available": True, "version": version, "url": url}),
+            encoding="utf-8",
+        )
+    else:
+        if update_file.exists():
+            update_file.unlink()
+
+
 def start_server(port: int) -> subprocess.Popen:
     return subprocess.Popen(
         [str(_python_exe()), "-m", "uvicorn", "backend.main:app",
@@ -76,6 +129,8 @@ def run_tray(url: str, server_proc: subprocess.Popen) -> None:
 
 def main() -> None:
     port = find_free_port()
+    import threading
+    threading.Thread(target=_run_update_check, daemon=True).start()
     server_proc = start_server(port)
     url = f"http://127.0.0.1:{port}"
 
