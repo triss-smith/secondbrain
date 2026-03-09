@@ -18,3 +18,5 @@ google-api-python-client
 python-multipart
 websockets
 aiofiles
+pystray
+Pillow
