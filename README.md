@@ -10,7 +10,7 @@ Save anything. Find anything. Think in connections.
 [![Frontend](https://img.shields.io/badge/Frontend-React%20%2B%20TypeScript-61DAFB?style=flat-square&logo=react&logoColor=black)](https://react.dev)
 [![Canvas](https://img.shields.io/badge/Canvas-React%20Flow-7c6af7?style=flat-square)](https://reactflow.dev)
 [![Storage](https://img.shields.io/badge/Storage-SQLite%20%2B%20ChromaDB-003B57?style=flat-square)](https://www.trychroma.com)
-[![License](https://img.shields.io/badge/License-MIT-22c55e?style=flat-square)](LICENSE)
+[![License](https://img.shields.io/badge/License-PolyForm%20Noncommercial-22c55e?style=flat-square)](LICENSE)
 
 </div>
 
@@ -42,8 +42,15 @@ Everything runs on your machine. Your data stays yours.
 ### Infinite Canvas
 - **Spatial thinking** — drag source nodes, chat windows, and pages onto an infinite board
 - **Automatic semantic edges** — canvas items connect to each other automatically based on embedding similarity; no manual linking required
+- **Typed manual connections** — draw your own edges between any two nodes and label the relationship: `related`, `source`, `inspired_by`, or `contradicts`
+- **AI connection awareness** — when related items share connections, the RAG pipeline injects those relationships into the AI's context so answers reflect your explicit knowledge graph
+- **3D mind map** — launch an interactive 3D force-directed graph of your entire knowledge base; orbit and fly through it with mouse + W/S keys
 - **Chat nodes** — floating chat windows you can pin to specific source nodes to scope the AI's context
 - **Page nodes** — save any conversation as a persistent, editable note on the canvas
+
+### Navigation & Interface
+- **Resizable panels** — drag to resize the sidebar and chat panel independently
+- **Keyboard shortcuts** — `Ctrl/Cmd+B` toggles the sidebar; `Ctrl/Cmd+I` opens the brain chat panel
 
 ### Library & Navigation
 - **Grouped library** — items organized into AI-generated categories, collapsed by default for a clean view
@@ -201,7 +208,7 @@ docker-compose up
 | **Chat** | Floating chat window; pin Source nodes to scope the AI's knowledge to specific items |
 | **Page** | Editable rich-text note; created automatically when you save a conversation |
 
-Semantic edges between Source nodes are drawn automatically — no configuration needed. Edge weight reflects embedding similarity; unrelated items stay disconnected.
+Semantic edges between Source nodes are drawn automatically — no configuration needed. Edge weight reflects embedding similarity; unrelated items stay disconnected. You can also draw manual typed edges between any nodes to capture relationships the AI didn't infer.
 
 ---
 
