@@ -34,6 +34,8 @@ def get_settings():
 
 @router.get("/models")
 async def fetch_provider_models(base_url: str):
+    if not base_url.startswith(("http://", "https://")):
+        raise HTTPException(status_code=400, detail="base_url must start with http:// or https://")
     try:
         async with httpx.AsyncClient(timeout=5.0) as client:
             response = await client.get(f"{base_url}/v1/models")

@@ -58,7 +58,6 @@ export function SettingsModal({ onClose, themeId, onThemeChange }: Props) {
     setTestResult(null)
     setFetchModelsError(null)
     setCustomModels([])
-    setCustomBaseUrl('')
   }
 
   async function handleFetchModels() {

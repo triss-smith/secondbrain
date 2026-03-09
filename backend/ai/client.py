@@ -40,7 +40,7 @@ async def chat_stream(messages: list[dict], system: str | None = None) -> AsyncI
             "stream": True,
             "max_tokens": 2048,
         }
-        if not s.enable_thinking:
+        if not s.enable_thinking and s.provider != "custom":
             payload["thinking"] = {"type": "disabled"}
         async with httpx.AsyncClient(timeout=120) as client:
             async with client.stream(
