@@ -63,11 +63,11 @@ end;
 
 procedure OpenEnvFile();
 var
-  ResultCode: Integer;
+  Dummy: Integer;
 begin
   ShellExec('open', 'notepad.exe',
     ExpandConstant('{app}\.env'), '',
-    SW_SHOW, ewNoWait, ResultCode);
+    SW_SHOW, ewNoWait, Dummy);
 end;
 
 procedure CurStepChanged(CurStep: TSetupStep);
