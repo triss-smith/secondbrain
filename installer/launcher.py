@@ -99,4 +99,19 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    log = _app_root() / "launcher.log"
+    try:
+        main()
+    except Exception as exc:
+        import traceback
+        log.write_text(traceback.format_exc(), encoding="utf-8")
+        import tkinter as tk
+        from tkinter import messagebox
+        root = tk.Tk()
+        root.withdraw()
+        messagebox.showerror(
+            "Second Brain",
+            f"Second Brain failed to start.\n\nError: {exc}\n\nDetails written to:\n{log}",
+        )
+        root.destroy()
+        sys.exit(1)

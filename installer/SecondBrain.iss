@@ -42,49 +42,11 @@ Name: "{commondesktop}\{#AppName}"; Filename: "{app}\python\{#AppExeName}"; Para
 
 [Run]
 ; Install Python dependencies — shown as a status message, runs hidden
-Filename: "{app}\python\python.exe"; Parameters: "-m pip install -r ""{app}\requirements.txt"""; WorkingDir: "{app}"; StatusMsg: "Installing dependencies (this may take several minutes)..."; Flags: runhidden waituntilterminated
+Filename: "{app}\python\python.exe"; Parameters: "-m pip install -r ""{app}\requirements.txt"" --target ""{app}\python\Lib\site-packages"""; WorkingDir: "{app}"; StatusMsg: "Installing dependencies (this may take several minutes)..."; Flags: runhidden waituntilterminated
 
 [UninstallDelete]
 
 [Code]
-procedure CreateEnvFile();
-var
-  EnvFile: string;
-  Content: string;
-begin
-  EnvFile := ExpandConstant('{app}\.env');
-  if not FileExists(EnvFile) then
-  begin
-    Content :=
-      'MINIMAX_API_KEY=your_api_key_here' + #13#10;
-    SaveStringToFile(EnvFile, Content, False);
-  end;
-end;
-
-procedure OpenEnvFile();
-var
-  Dummy: Integer;
-begin
-  ShellExec('open', 'notepad.exe',
-    ExpandConstant('{app}\.env'), '',
-    SW_SHOW, ewNoWait, Dummy);
-end;
-
-procedure CurStepChanged(CurStep: TSetupStep);
-begin
-  if CurStep = ssPostInstall then
-  begin
-    CreateEnvFile();
-    if MsgBox(
-      'Almost done! Second Brain needs an API key to work.' + #13#10 +
-      'Your .env file will open now — paste your MINIMAX_API_KEY value and save.',
-      mbInformation, MB_OK) = IDOK then
-    begin
-      OpenEnvFile();
-    end;
-  end;
-end;
-
 function InitializeUninstall(): Boolean;
 var
   ResultCode: Integer;
