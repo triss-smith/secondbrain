@@ -96,7 +96,22 @@ Configure your preferred provider from the in-app settings panel. No restart req
 
 ## Getting Started
 
-### Prerequisites
+### Windows Installer (recommended for non-developers)
+
+1. Download `SecondBrain-Setup.exe` from the [latest release](../../releases/latest)
+2. Run it and follow the prompts — Python and all dependencies install automatically
+3. A Notepad window will open during setup — paste your API key and save
+4. Click the **Second Brain** shortcut on your desktop or Start Menu
+
+Your browser opens automatically. A tray icon in the taskbar lets you reopen the app or quit.
+
+> **First launch:** the local AI models (~500 MB total) download once and are cached. This takes a few minutes depending on your internet speed.
+
+---
+
+### Developer Setup
+
+#### Prerequisites
 
 | Requirement | Notes |
 |---|---|
@@ -105,7 +120,7 @@ Configure your preferred provider from the in-app settings panel. No restart req
 | ffmpeg | Required for podcast and TikTok audio transcription |
 | An AI API key | Any supported provider — configure in-app after setup |
 
-### 1. Clone & configure
+#### 1. Clone & configure
 
 ```bash
 git clone https://github.com/triss-smith/mysecondbrain.git
@@ -116,7 +131,7 @@ cp .env.example .env
 
 `.env` is only needed for first-run fallback. Once you save settings in the UI, `data/config.json` takes over and `.env` is no longer read.
 
-### 2. Install dependencies
+#### 2. Install dependencies
 
 ```bash
 # Backend
@@ -126,7 +141,7 @@ pip install -r requirements.txt
 cd frontend && npm install && cd ..
 ```
 
-### 3. Run
+#### 3. Run
 
 **Windows (recommended):**
 ```
@@ -144,15 +159,29 @@ cd frontend && npm run dev
 
 Open **http://localhost:5173** in your browser.
 
-### 4. Configure your AI provider
+#### 4. Configure your AI provider
 
 Click the **⚙ gear icon** next to "Second Brain" in the sidebar. Select your provider, choose a model, paste your API key, and click **Test Connection** to verify — then **Save**.
 
 > **First run:** the local embedding model (~90 MB) downloads automatically and is cached. Whisper (~150 MB) downloads on first podcast or TikTok ingest.
 
-### Access from other devices
+#### Access from other devices
 
 Find your machine's local IP (`ipconfig` on Windows, `ifconfig` on Mac/Linux) and open `http://192.168.x.x:5173` from any device on the same network.
+
+---
+
+### Building a Release (Windows installer)
+
+Requires [Inno Setup 6](https://jrsoftware.org/isdl.php) installed on a Windows machine.
+
+```bat
+installer\build.bat
+```
+
+This produces `dist\SecondBrain-Setup.exe`. Upload it as a GitHub release asset — users download and run it with no prerequisites.
+
+> First build downloads the Python 3.12 embeddable (~25 MB) and caches it; subsequent builds skip that step.
 
 ---
 
