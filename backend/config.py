@@ -1,5 +1,11 @@
+import os
 from pydantic_settings import BaseSettings
 from pathlib import Path
+
+_data_dir = Path(
+    os.environ.get("SECOND_BRAIN_DATA")
+    or Path(os.environ.get("APPDATA", Path.home())) / "SecondBrain" / "data"
+)
 
 
 class Settings(BaseSettings):
@@ -9,9 +15,9 @@ class Settings(BaseSettings):
 
     embed_model: str = "all-MiniLM-L6-v2"
 
-    db_path: str = "data/brain.db"
-    chroma_path: str = "data/chroma"
-    uploads_path: str = "data/uploads"
+    db_path: str = str(_data_dir / "brain.db")
+    chroma_path: str = str(_data_dir / "chroma")
+    uploads_path: str = str(_data_dir / "uploads")
 
     host: str = "0.0.0.0"
     port: int = 8000
