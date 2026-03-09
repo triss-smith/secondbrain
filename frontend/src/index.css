@@ -43,6 +43,9 @@ body {
 [data-theme="light"] .bg-accent               { color: #ffffff; }
 [data-theme="light"] .bg-accent *             { color: #ffffff; }
 
+/* Prevent hover:text-white from overriding light mode text colour */
+[data-theme="light"] .hover\:text-white:hover { color: #1e293b; }
+
 /* ── React Flow overrides ── */
 .react-flow__background                       { background-color: #0f1117; }
 [data-theme] .react-flow__background          { background-color: var(--color-surface); }

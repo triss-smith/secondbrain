@@ -490,6 +490,7 @@ export function Board({ isDark = true }: Props) {
   const accentColor   = cssVar('--color-accent')   || '#7c6af7'
   const surface3Color = cssVar('--color-surface-3') || '#2a2f47'
   const surfaceColor  = cssVar('--color-surface')   || '#0f1117'
+  const isLightMode   = document.documentElement.getAttribute('data-theme') === 'light'
 
   function hexToRgba(hex: string, alpha: number) {
     const r = parseInt(hex.slice(1, 3), 16)
@@ -527,7 +528,7 @@ export function Board({ isDark = true }: Props) {
           if (n.type === 'chat') return '#34d399'
           return '#475569'
         }}
-        maskColor={hexToRgba(surfaceColor, 0.7)}
+        maskColor={isLightMode ? 'rgba(100, 116, 139, 0.35)' : hexToRgba(surfaceColor, 0.7)}
         pannable
         zoomable
         style={{ width: 200, height: 140 }}
