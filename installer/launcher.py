@@ -1,4 +1,5 @@
 # installer/launcher.py
+import os
 import socket
 import subprocess
 import sys
@@ -30,6 +31,14 @@ def wait_for_server(url: str, timeout: int = 60) -> bool:
 
 def _app_root() -> Path:
     return Path(__file__).parent.parent
+
+
+def _user_data_dir() -> Path:
+    """User-writable data directory — never inside Program Files."""
+    appdata = os.environ.get("APPDATA") or str(Path.home())
+    d = Path(appdata) / "SecondBrain"
+    d.mkdir(parents=True, exist_ok=True)
+    return d
 
 
 def _python_exe() -> Path:
@@ -79,7 +88,7 @@ def _run_update_check() -> None:
     import json as _json
     current = _read_current_version()
     result = check_for_update(current)
-    update_file = _app_root() / "update.json"
+    update_file = _user_data_dir() / "update.json"
     if result:
         version, url = result
         update_file.write_text(
@@ -90,12 +99,14 @@ def _run_update_check() -> None:
         if update_file.exists():
             update_file.unlink()
 
-
 def start_server(port: int) -> subprocess.Popen:
+    env = os.environ.copy()
+    env["SECOND_BRAIN_DATA"] = str(_user_data_dir() / "data")
     return subprocess.Popen(
         [str(_python_exe()), "-m", "uvicorn", "backend.main:app",
          "--host", "127.0.0.1", "--port", str(port)],
         cwd=str(_app_root()),
+        env=env,
         creationflags=subprocess.CREATE_NO_WINDOW,
     )
 
@@ -154,7 +165,7 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    log = _app_root() / "launcher.log"
+    log = _user_data_dir() / "launcher.log"
     try:
         main()
     except Exception as exc:

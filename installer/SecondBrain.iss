@@ -31,6 +31,7 @@ Source: "..\frontend\dist\*"; DestDir: "{app}\frontend\dist"; Flags: recursesubd
 Source: "..\installer\launcher.py"; DestDir: "{app}\installer"; Flags: ignoreversion
 Source: "..\installer\icon.ico"; DestDir: "{app}\installer"; Flags: ignoreversion
 Source: "..\requirements.txt"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\VERSION"; DestDir: "{app}"; Flags: ignoreversion
 ; Embedded Python (set up by build.bat — includes pip)
 Source: "..\installer\python-embed\*"; DestDir: "{app}\python"; Flags: recursesubdirs ignoreversion
 
