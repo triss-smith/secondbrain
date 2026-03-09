@@ -1,7 +1,12 @@
 # installer/launcher.py
+import os
 import socket
+import subprocess
+import sys
 import time
 import urllib.request
+import webbrowser
+from pathlib import Path
 
 
 def find_free_port() -> int:
@@ -22,3 +27,69 @@ def wait_for_server(url: str, timeout: int = 60) -> bool:
         except Exception:
             time.sleep(0.5)
     return False
+
+
+def _app_root() -> Path:
+    return Path(__file__).parent.parent
+
+
+def _python_exe() -> Path:
+    """Use embedded Python if available (installed), otherwise current interpreter."""
+    embedded = _app_root() / "python" / "python.exe"
+    return embedded if embedded.exists() else Path(sys.executable)
+
+
+def start_server(port: int) -> subprocess.Popen:
+    env = os.environ.copy()
+    env["PORT"] = str(port)
+    return subprocess.Popen(
+        [str(_python_exe()), "-m", "uvicorn", "backend.main:app",
+         "--host", "127.0.0.1", "--port", str(port)],
+        cwd=str(_app_root()),
+        env=env,
+        creationflags=subprocess.CREATE_NO_WINDOW,
+    )
+
+
+def _load_icon():
+    from PIL import Image
+    icon_path = Path(__file__).parent / "icon.ico"
+    if icon_path.exists():
+        return Image.open(icon_path)
+    # Fallback: indigo square
+    return Image.new("RGB", (64, 64), color=(99, 102, 241))
+
+
+def run_tray(url: str, server_proc: subprocess.Popen) -> None:
+    import pystray
+
+    def on_open(icon, item):
+        webbrowser.open(url)
+
+    def on_quit(icon, item):
+        server_proc.terminate()
+        icon.stop()
+
+    menu = pystray.Menu(
+        pystray.MenuItem("Open Second Brain", on_open, default=True),
+        pystray.MenuItem("Quit", on_quit),
+    )
+    icon = pystray.Icon("SecondBrain", _load_icon(), "Second Brain", menu)
+    icon.run()
+
+
+def main() -> None:
+    port = find_free_port()
+    server_proc = start_server(port)
+    url = f"http://127.0.0.1:{port}"
+
+    if not wait_for_server(f"{url}/api/health", timeout=60):
+        server_proc.terminate()
+        sys.exit(1)
+
+    webbrowser.open(url)
+    run_tray(url, server_proc)
+
+
+if __name__ == "__main__":
+    main()
