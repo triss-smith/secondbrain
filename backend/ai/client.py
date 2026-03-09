@@ -10,12 +10,16 @@ from backend.store.settings import settings_manager, PROVIDERS
 def _provider_config():
     s = settings_manager.get()
     provider = PROVIDERS.get(s.provider, PROVIDERS["minimax"])
+    if s.provider == "custom":
+        if not s.custom_base_url:
+            raise RuntimeError("No API URL configured for custom provider. Set one in Settings.")
+        provider = {**provider, "base_url": s.custom_base_url}
     return s, provider
 
 
 async def chat_stream(messages: list[dict], system: str | None = None) -> AsyncIterator[str]:
     s, provider = _provider_config()
-    if not s.api_key:
+    if not s.api_key and s.provider != "custom":
         raise RuntimeError(f"No API key configured for provider '{s.provider}'. Set one in Settings.")
     if provider["sdk"] == "anthropic":
         async with anthropic.AsyncAnthropic(
@@ -36,7 +40,7 @@ async def chat_stream(messages: list[dict], system: str | None = None) -> AsyncI
             "stream": True,
             "max_tokens": 2048,
         }
-        if not s.enable_thinking:
+        if not s.enable_thinking and s.provider != "custom":
             payload["thinking"] = {"type": "disabled"}
         async with httpx.AsyncClient(timeout=120) as client:
             async with client.stream(
@@ -103,7 +107,7 @@ async def strip_think_tags(source: AsyncIterator[str]) -> AsyncIterator[str]:
 
 async def chat(messages: list[dict], system: str | None = None) -> str:
     s, provider = _provider_config()
-    if not s.api_key:
+    if not s.api_key and s.provider != "custom":
         raise RuntimeError(f"No API key configured for provider '{s.provider}'. Set one in Settings.")
     if provider["sdk"] == "anthropic":
         client = anthropic.AsyncAnthropic(

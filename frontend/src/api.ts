@@ -85,16 +85,20 @@ export interface SettingsResponse {
   similarity_threshold: number
   enable_thinking: boolean
   providers: Record<string, ProviderInfo>
+  custom_base_url: string
 }
 
 export const getSettings = () =>
   api.get<SettingsResponse>('/settings').then(r => r.data)
 
-export const saveSettings = (data: { provider: string; model: string; api_key: string; organize_mode: string; similarity_threshold: number; enable_thinking: boolean }) =>
+export const saveSettings = (data: { provider: string; model: string; api_key: string; organize_mode: string; similarity_threshold: number; enable_thinking: boolean; custom_base_url?: string }) =>
   api.put<{ provider: string; model: string; api_key_set: boolean; organize_mode: string; similarity_threshold: number; enable_thinking: boolean }>('/settings', data).then(r => r.data)
 
 export const testConnection = () =>
   api.post<{ ok: boolean; error?: string }>('/settings/test').then(r => r.data)
+
+export const fetchCustomModels = (baseUrl: string) =>
+  api.get<{ models: string[] }>('/settings/models', { params: { base_url: baseUrl } }).then(r => r.data.models)
 
 // WebSocket chat
 export const WS_CHAT_URL = `${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.host}/ws/chat`
