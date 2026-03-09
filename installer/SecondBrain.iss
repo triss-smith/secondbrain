@@ -19,7 +19,7 @@ DisableProgramGroupPage=yes
 WizardStyle=modern
 
 [Languages]
-Name: "english"; MessagesFile: "compiler:Default.iss"
+Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [Tasks]
 Name: "desktopicon"; Description: "Create a &desktop shortcut"; GroupDescription: "Additional icons:"; Flags: checkedonce
@@ -63,11 +63,11 @@ end;
 
 procedure OpenEnvFile();
 var
-  ResultCode: Integer;
+  Dummy: Integer;
 begin
   ShellExec('open', 'notepad.exe',
     ExpandConstant('{app}\.env'), '',
-    SW_SHOW, ewNoWait, ResultCode);
+    SW_SHOW, ewNoWait, Dummy);
 end;
 
 procedure CurStepChanged(CurStep: TSetupStep);
@@ -94,7 +94,6 @@ begin
   begin
     if MsgBox(
       'Do you want to delete your Second Brain data (notes, files, and AI memory)?' + #13#10 +
-      #13#10 +
       'Click YES to permanently delete all your data.' + #13#10 +
       'Click NO to keep your data (you can re-import it later).',
       mbConfirmation, MB_YESNO) = IDYES then
