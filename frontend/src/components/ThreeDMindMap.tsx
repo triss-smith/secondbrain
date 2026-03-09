@@ -227,14 +227,6 @@ function Edges({
           <lineBasicMaterial color="#7c6af7" opacity={0.35} transparent depthWrite={false} />
         </lineSegments>
       )}
-      {(Object.entries(connPositionsByType) as [ConnectionType, Float32Array][]).map(([type, arr]) => (
-        <lineSegments key={type}>
-          <bufferGeometry>
-            <bufferAttribute attach="attributes-position" args={[arr, 3]} />
-          </bufferGeometry>
-          <lineBasicMaterial color={CONN_COLORS[type]} opacity={0.8} transparent depthWrite={false} />
-        </lineSegments>
-      ))}
       {catPositions.length > 0 && (
         <lineSegments>
           <bufferGeometry>
@@ -243,6 +235,14 @@ function Edges({
           <lineBasicMaterial color="#e2e8f0" opacity={0.12} transparent depthWrite={false} />
         </lineSegments>
       )}
+      {(Object.entries(connPositionsByType) as [ConnectionType, Float32Array][]).map(([type, arr]) => (
+        <lineSegments key={type}>
+          <bufferGeometry>
+            <bufferAttribute attach="attributes-position" args={[arr, 3]} />
+          </bufferGeometry>
+          <lineBasicMaterial color={CONN_COLORS[type]} opacity={0.8} transparent depthWrite={false} />
+        </lineSegments>
+      ))}
     </>
   )
 }

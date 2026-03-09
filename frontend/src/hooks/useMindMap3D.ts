@@ -15,7 +15,7 @@ export interface SimNode3D {
   z: number
   degree: number
   node_type: 'item' | 'category'
-  category: string       // category name for hubs, item's category for items (leave '' for now — Task 3 will fill it)
+  category: string       // category name for hubs, or item's category string for items
   member_count?: number  // only on category hubs
 }
 
