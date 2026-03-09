@@ -56,7 +56,7 @@ export function useMindMap3D(): MindMap3DState {
         })
 
         const allSimNodes: SimNode3D[] = raw.nodes.map(n => {
-          const isCategory = (n as { type?: string }).type === 'categoryHub'
+          const isCategory = n.type === 'categoryHub'
           return {
             id: n.id,
             item_id: isCategory ? '' : n.data.item_id,
@@ -69,7 +69,7 @@ export function useMindMap3D(): MindMap3DState {
             z: (Math.random() - 0.5) * 40,
             degree: degreeMap[n.id] ?? 0,
             node_type: isCategory ? 'category' : 'item',
-            category: isCategory ? n.data.label : '',
+            category: isCategory ? n.data.label : (n.data.category ?? ''),
             member_count: isCategory ? ((n.data as any).member_count as number | undefined) : undefined,
           } as SimNode3D
         })

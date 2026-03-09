@@ -40,7 +40,7 @@ function NodeSphere({
   userConnections: Connection[]
 }) {
   const [hovered, setHovered] = useState(false)
-  const color = CONTENT_TYPE_COLORS[node.content_type] ?? '#7c6af7'
+  const color = (node.content_type ? CONTENT_TYPE_COLORS[node.content_type] : undefined) ?? '#7c6af7'
   const radius = Math.max(1, 1 + Math.min(node.degree, 5) * 0.35)
   const shortLabel = node.label.length > 28 ? node.label.slice(0, 28) + '…' : node.label
   const preview = (node.summary || node.snippet).slice(0, 90)
@@ -124,16 +124,56 @@ function NodeSphere({
   )
 }
 
+function CategorySphere({ node }: { node: SimNode3D }) {
+  const radius = 3.5 + Math.min((node.member_count ?? 1) * 0.4, 4)
+  return (
+    <group position={[node.x, node.y, node.z]}>
+      <mesh>
+        <sphereGeometry args={[radius, 24, 24]} />
+        <meshStandardMaterial
+          color="#94a3b8"
+          emissive="#94a3b8"
+          emissiveIntensity={0.1}
+          transparent
+          opacity={0.18}
+          depthWrite={false}
+        />
+      </mesh>
+      <Html
+        center
+        position={[0, -(radius + 1), 0]}
+        distanceFactor={90}
+        style={{ pointerEvents: 'none' }}
+      >
+        <span style={{
+          color: '#cbd5e1',
+          fontSize: '13px',
+          fontWeight: 700,
+          whiteSpace: 'nowrap',
+          textShadow: '0 1px 4px rgba(0,0,0,0.95)',
+          letterSpacing: '0.06em',
+          textTransform: 'uppercase',
+          userSelect: 'none',
+        }}>
+          {node.label}
+        </span>
+      </Html>
+    </group>
+  )
+}
+
 function Edges({
   simEdges,
   userConnections,
   nodeById,
   nodeByItemId,
+  categoryNodes,
 }: {
   simEdges: SimEdge3D[]
   userConnections: Connection[]
   nodeById: Record<string, SimNode3D>
   nodeByItemId: Record<string, SimNode3D>
+  categoryNodes: SimNode3D[]
 }) {
   // Similarity edges (purple, dim)
   const simPositions = useMemo(() => {
@@ -163,6 +203,20 @@ function Edges({
     ) as Partial<Record<ConnectionType, Float32Array>>
   }, [userConnections, nodeByItemId])
 
+  const catPositions = useMemo(() => {
+    if (categoryNodes.length === 0) return new Float32Array(0)
+    const catByLabel: Record<string, SimNode3D> = {}
+    categoryNodes.forEach(hub => { catByLabel[hub.label] = hub })
+
+    const pts: number[] = []
+    for (const itemNode of Object.values(nodeByItemId)) {
+      const hub = catByLabel[itemNode.category]
+      if (!hub) continue
+      pts.push(itemNode.x, itemNode.y, itemNode.z, hub.x, hub.y, hub.z)
+    }
+    return new Float32Array(pts)
+  }, [categoryNodes, nodeByItemId])
+
   return (
     <>
       {simPositions.length > 0 && (
@@ -181,6 +235,14 @@ function Edges({
           <lineBasicMaterial color={CONN_COLORS[type]} opacity={0.8} transparent depthWrite={false} />
         </lineSegments>
       ))}
+      {catPositions.length > 0 && (
+        <lineSegments>
+          <bufferGeometry>
+            <bufferAttribute attach="attributes-position" args={[catPositions, 3]} />
+          </bufferGeometry>
+          <lineBasicMaterial color="#e2e8f0" opacity={0.12} transparent depthWrite={false} />
+        </lineSegments>
+      )}
     </>
   )
 }
@@ -189,11 +251,13 @@ function Scene({
   nodes,
   edges,
   userConnections,
+  categoryNodes,
   onSelectItem,
 }: {
   nodes: SimNode3D[]
   edges: SimEdge3D[]
   userConnections: Connection[]
+  categoryNodes: SimNode3D[]
   onSelectItem: (itemId: string) => void
 }) {
   const nodeById = useMemo(() => {
@@ -214,7 +278,16 @@ function Scene({
       <pointLight position={[0, 0, 0]} intensity={1} />
       <OrbitControls makeDefault />
       <CameraKeyboard />
-      <Edges simEdges={edges} userConnections={userConnections} nodeById={nodeById} nodeByItemId={nodeByItemId} />
+      <Edges
+        simEdges={edges}
+        userConnections={userConnections}
+        nodeById={nodeById}
+        nodeByItemId={nodeByItemId}
+        categoryNodes={categoryNodes}
+      />
+      {categoryNodes.map(n => (
+        <CategorySphere key={n.id} node={n} />
+      ))}
       {nodes.map(n => (
         <NodeSphere key={n.id} node={n} onSelect={onSelectItem} userConnections={userConnections} />
       ))}
@@ -225,7 +298,7 @@ function Scene({
 // ── Main overlay component ─────────────────────────────────────────────────
 
 export function ThreeDMindMap({ onClose }: { onClose: () => void }) {
-  const { nodes, edges, userConnections, loading, error } = useMindMap3D()
+  const { nodes, edges, userConnections, categoryNodes, loading, error } = useMindMap3D()
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null)
 
   // Escape closes the overlay (unless a modal is open)
@@ -244,7 +317,7 @@ export function ThreeDMindMap({ onClose }: { onClose: () => void }) {
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium text-white">3D Knowledge Graph</span>
           {!loading && (
-            <span className="text-xs text-slate-500">{nodes.length} items</span>
+            <span className="text-xs text-slate-500">{nodes.length} items · {categoryNodes.length} categories</span>
           )}
         </div>
         <div className="flex items-center gap-3">
@@ -282,7 +355,7 @@ export function ThreeDMindMap({ onClose }: { onClose: () => void }) {
       {!loading && !error && nodes.length > 0 && (
         <div className="flex-1">
           <Canvas camera={{ position: [0, 0, 80], fov: 60 }}>
-            <Scene nodes={nodes} edges={edges} userConnections={userConnections} onSelectItem={setSelectedItemId} />
+            <Scene nodes={nodes} edges={edges} userConnections={userConnections} categoryNodes={categoryNodes} onSelectItem={setSelectedItemId} />
           </Canvas>
         </div>
       )}

@@ -44,6 +44,7 @@ def compute_mind_map(threshold: float = 0.55) -> dict:
                 "thumbnail": item.thumbnail,
                 "summary": item.summary or "",
                 "snippet": _snippet(item),
+                "category": item.category or "",
             },
             "position": _circle_position(i, len(items)),
         }

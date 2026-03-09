@@ -107,10 +107,12 @@ export interface MindMapNodeData {
   thumbnail: string | null
   summary: string
   snippet: string
+  category: string
 }
 
 export interface RawMindMapNode {
   id: string
+  type: string
   data: MindMapNodeData
 }
 
