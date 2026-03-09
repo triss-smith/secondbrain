@@ -63,6 +63,37 @@ if errorlevel 1 (echo ERROR: Inno Setup compilation failed. && exit /b 1)
 echo     Done.
 echo.
 
+:: ── 5. Sign installer (if certificate exists) ───────────────────────────────
+set PFX=installer\SecondBrain.pfx
+if exist "%PFX%" (
+    echo [4/4] Signing installer...
+
+    :: Find signtool.exe in Windows SDK
+    set SIGNTOOL=
+    for /f "delims=" %%i in ('where signtool 2^>nul') do set SIGNTOOL=%%i
+    if not defined SIGNTOOL (
+        for /r "C:\Program Files (x86)\Windows Kits\10\bin" %%i in (signtool.exe) do set SIGNTOOL=%%i
+    )
+    if not defined SIGNTOOL (
+        for /r "C:\Program Files\Windows Kits\10\bin" %%i in (signtool.exe) do set SIGNTOOL=%%i
+    )
+
+    if not defined SIGNTOOL (
+        echo     WARNING: signtool.exe not found. Skipping signing.
+        echo     Install the Windows SDK to enable signing:
+        echo     https://developer.microsoft.com/windows/downloads/windows-sdk/
+    ) else (
+        set /p PFX_PASS=Enter certificate password:
+        "%SIGNTOOL%" sign /f "%PFX%" /p "%PFX_PASS%" /fd SHA256 /tr http://timestamp.digicert.com /td SHA256 "dist\SecondBrain-Setup.exe"
+        if errorlevel 1 (echo ERROR: Signing failed. && exit /b 1)
+        echo     Done.
+    )
+) else (
+    echo [4/4] No certificate found, skipping signing.
+    echo     Run: powershell -ExecutionPolicy Bypass -File installer\create-cert.ps1
+)
+echo.
+
 echo Build complete!
 echo     Output: dist\SecondBrain-Setup.exe
 echo.

@@ -33,3 +33,4 @@ Thumbs.db
 installer/python-embed/
 installer/get-pip.py
 installer/*.zip
+installer/*.pfx
