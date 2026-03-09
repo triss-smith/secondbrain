@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { X, CheckCircle, XCircle, Loader2 } from 'lucide-react'
-import { getSettings, saveSettings, testConnection, type SettingsResponse } from '../api'
+import { getSettings, saveSettings, testConnection, fetchCustomModels, type SettingsResponse } from '../api'
 import { THEMES } from '../themes'
 
 interface Props {
@@ -22,6 +22,10 @@ export function SettingsModal({ onClose, themeId, onThemeChange }: Props) {
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
+  const [customBaseUrl, setCustomBaseUrl] = useState('')
+  const [fetchingModels, setFetchingModels] = useState(false)
+  const [fetchModelsError, setFetchModelsError] = useState<string | null>(null)
+  const [customModels, setCustomModels] = useState<string[]>([])
 
   useEffect(() => {
     getSettings().then(d => {
@@ -31,6 +35,10 @@ export function SettingsModal({ onClose, themeId, onThemeChange }: Props) {
       setOrganizeMode(d.organize_mode)
       setSimilarityThreshold(d.similarity_threshold)
       setEnableThinking(d.enable_thinking)
+      setCustomBaseUrl(d.custom_base_url)
+      if (d.provider === 'custom' && d.model) {
+        setCustomModels([d.model])
+      }
     })
   }, [])
 
@@ -48,13 +56,42 @@ export function SettingsModal({ onClose, themeId, onThemeChange }: Props) {
     setProvider(p)
     setModel(data?.providers[p]?.models[0] ?? '')
     setTestResult(null)
+    setFetchModelsError(null)
+    setCustomModels([])
+    setCustomBaseUrl('')
+  }
+
+  async function handleFetchModels() {
+    try {
+      new URL(customBaseUrl)
+    } catch {
+      setFetchModelsError('Please enter a valid URL (e.g. http://localhost:11434)')
+      return
+    }
+    setFetchingModels(true)
+    setFetchModelsError(null)
+    setCustomModels([])
+    setModel('')
+    try {
+      const models = await fetchCustomModels(customBaseUrl)
+      if (models.length === 0) {
+        setFetchModelsError('No models found at this URL')
+      } else {
+        setCustomModels(models)
+        setModel(models[0])
+      }
+    } catch {
+      setFetchModelsError(`Could not connect to ${customBaseUrl} — is the server running?`)
+    } finally {
+      setFetchingModels(false)
+    }
   }
 
   async function handleTest() {
     setTesting(true)
     setTestResult(null)
     try {
-      await saveSettings({ provider, model, api_key: apiKey, organize_mode: organizeMode, similarity_threshold: similarityThreshold, enable_thinking: enableThinking })
+      await saveSettings({ provider, model, api_key: apiKey, organize_mode: organizeMode, similarity_threshold: similarityThreshold, enable_thinking: enableThinking, custom_base_url: customBaseUrl })
       const result = await testConnection()
       setTestResult(result)
     } catch {
@@ -68,7 +105,7 @@ export function SettingsModal({ onClose, themeId, onThemeChange }: Props) {
     setSaving(true)
     setSaveError(null)
     try {
-      await saveSettings({ provider, model, api_key: apiKey, organize_mode: organizeMode, similarity_threshold: similarityThreshold, enable_thinking: enableThinking })
+      await saveSettings({ provider, model, api_key: apiKey, organize_mode: organizeMode, similarity_threshold: similarityThreshold, enable_thinking: enableThinking, custom_base_url: customBaseUrl })
       window.dispatchEvent(new CustomEvent('settings-changed', { detail: { organize_mode: organizeMode, similarity_threshold: similarityThreshold } }))
       setSaved(true)
       setTimeout(() => setSaved(false), 2000)
@@ -114,24 +151,59 @@ export function SettingsModal({ onClose, themeId, onThemeChange }: Props) {
 
               <div>
                 <label className="block text-xs font-medium text-slate-400 mb-1.5">Model</label>
-                <select
-                  value={model}
-                  onChange={e => setModel(e.target.value)}
-                  className="w-full bg-surface-2 border border-surface-3 text-white text-xs rounded-lg px-3 py-2 outline-none focus:border-accent transition-colors"
-                >
-                  {models.map(m => (
-                    <option key={m} value={m}>{m}</option>
-                  ))}
-                </select>
+                {provider === 'custom' ? (
+                  <div className="space-y-2">
+                    <input
+                      type="text"
+                      value={customBaseUrl}
+                      onChange={e => { setCustomBaseUrl(e.target.value); setCustomModels([]); setModel(''); setFetchModelsError(null) }}
+                      placeholder="http://localhost:11434"
+                      className="w-full bg-surface-2 border border-surface-3 text-white text-xs rounded-lg px-3 py-2 outline-none focus:border-accent transition-colors placeholder-slate-600"
+                    />
+                    <button
+                      onClick={handleFetchModels}
+                      disabled={!customBaseUrl || fetchingModels}
+                      className="text-xs text-slate-400 hover:text-white px-3 py-1.5 rounded-lg border border-surface-3 hover:border-slate-500 transition-colors disabled:opacity-40 flex items-center gap-2"
+                    >
+                      {fetchingModels ? <><Loader2 size={12} className="animate-spin" /> Fetching...</> : 'Fetch Models'}
+                    </button>
+                    {fetchModelsError && (
+                      <p className="text-xs text-red-400">{fetchModelsError}</p>
+                    )}
+                    {customModels.length > 0 && (
+                      <select
+                        value={model}
+                        onChange={e => setModel(e.target.value)}
+                        className="w-full bg-surface-2 border border-surface-3 text-white text-xs rounded-lg px-3 py-2 outline-none focus:border-accent transition-colors"
+                      >
+                        {customModels.map(m => (
+                          <option key={m} value={m}>{m}</option>
+                        ))}
+                      </select>
+                    )}
+                  </div>
+                ) : (
+                  <select
+                    value={model}
+                    onChange={e => setModel(e.target.value)}
+                    className="w-full bg-surface-2 border border-surface-3 text-white text-xs rounded-lg px-3 py-2 outline-none focus:border-accent transition-colors"
+                  >
+                    {models.map(m => (
+                      <option key={m} value={m}>{m}</option>
+                    ))}
+                  </select>
+                )}
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-400 mb-1.5">API Key</label>
+                <label className="block text-xs font-medium text-slate-400 mb-1.5">
+                  API Key{provider === 'custom' ? ' (optional)' : ''}
+                </label>
                 <input
                   type="password"
                   value={apiKey}
                   onChange={e => setApiKey(e.target.value)}
-                  placeholder={data.api_key_set ? '••••••••••••••••' : 'Enter your API key...'}
+                  placeholder={provider === 'custom' ? 'Leave blank if not required' : (data.api_key_set ? '••••••••••••••••' : 'Enter your API key...')}
                   className="w-full bg-surface-2 border border-surface-3 text-white text-xs rounded-lg px-3 py-2 outline-none focus:border-accent transition-colors placeholder-slate-600"
                 />
               </div>
