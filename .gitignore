@@ -28,3 +28,8 @@ Thumbs.db
 
 # Claude
 .claude/
+
+# Windows installer build artifacts
+installer/python-embed/
+installer/get-pip.py
+installer/*.zip

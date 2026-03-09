@@ -96,78 +96,54 @@ Configure your preferred provider from the in-app settings panel. No restart req
 
 ## Getting Started
 
-### Prerequisites
+### Windows Installer (recommended for non-developers)
 
-| Requirement | Notes |
-|---|---|
-| Python 3.12 | Earlier versions untested |
-| Node.js 18+ | For the frontend |
-| ffmpeg | Required for podcast and TikTok audio transcription |
-| An AI API key | Any supported provider — configure in-app after setup |
+1. Download `SecondBrain-Setup.exe` from the [latest release](../../releases/latest)
+2. Run it and follow the prompts — Python and all dependencies install automatically
+3. A Notepad window will open during setup — paste your API key and save
+4. Click the **Second Brain** shortcut on your desktop or Start Menu
 
-### 1. Clone & configure
+Your browser opens automatically. A tray icon in the taskbar lets you reopen the app or quit.
+
+> **First launch:** the local AI models (~500 MB total) download once and are cached. This takes a few minutes depending on your internet speed.
+
+---
+
+### Docker (recommended for self-hosting and developers)
 
 ```bash
 git clone https://github.com/triss-smith/mysecondbrain.git
 cd mysecondbrain
 
-cp .env.example .env
-```
-
-`.env` is only needed for first-run fallback. Once you save settings in the UI, `data/config.json` takes over and `.env` is no longer read.
-
-### 2. Install dependencies
-
-```bash
-# Backend
-pip install -r requirements.txt
-
-# Frontend
-cd frontend && npm install && cd ..
-```
-
-### 3. Run
-
-**Windows (recommended):**
-```
-start.bat
-```
-
-**Manual (two terminals):**
-```bash
-# Terminal 1 — backend
-py -3.12 -m uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload
-
-# Terminal 2 — frontend
-cd frontend && npm run dev
+cp .env.example .env  # add your API key
+docker-compose up
 ```
 
 Open **http://localhost:5173** in your browser.
 
-### 4. Configure your AI provider
+Configure your AI provider from the **⚙ gear icon** in the sidebar — no restart required.
 
-Click the **⚙ gear icon** next to "Second Brain" in the sidebar. Select your provider, choose a model, paste your API key, and click **Test Connection** to verify — then **Save**.
-
-> **First run:** the local embedding model (~90 MB) downloads automatically and is cached. Whisper (~150 MB) downloads on first podcast or TikTok ingest.
-
-### Access from other devices
-
-Find your machine's local IP (`ipconfig` on Windows, `ifconfig` on Mac/Linux) and open `http://192.168.x.x:5173` from any device on the same network.
+> **First run:** the local embedding model (~90 MB) downloads and is cached. Whisper (~150 MB) downloads on first podcast or TikTok ingest.
 
 ---
 
-## Docker
+### Contributing
 
-```bash
-cp .env.example .env   # add a fallback API key if desired
+See [CONTRIBUTING.md](CONTRIBUTING.md) for local development setup (hot-reload, manual backend/frontend workflow).
 
-docker-compose up
+---
+
+### Building a Release (Windows installer)
+
+Requires [Inno Setup 6](https://jrsoftware.org/isdl.php) on a Windows machine.
+
+```bat
+installer\build.bat
 ```
 
-| Service | URL |
-|---|---|
-| App | http://localhost:5173 |
-| Backend API | http://localhost:8000 |
+Produces `dist\SecondBrain-Setup.exe`. Upload as a GitHub release asset — users run it with no prerequisites.
+
+> First build downloads the Python 3.12 embeddable (~25 MB) and caches it; subsequent builds skip that step.
 
 ---
 
