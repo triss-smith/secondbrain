@@ -94,7 +94,6 @@ begin
   begin
     if MsgBox(
       'Do you want to delete your Second Brain data (notes, files, and AI memory)?' + #13#10 +
-      #13#10 +
       'Click YES to permanently delete all your data.' + #13#10 +
       'Click NO to keep your data (you can re-import it later).',
       mbConfirmation, MB_YESNO) = IDYES then
