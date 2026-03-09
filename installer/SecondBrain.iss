@@ -1,6 +1,5 @@
 ; installer/SecondBrain.iss
 #define AppName "Second Brain"
-#define AppVersion "1.0.0"
 #define AppExeName "pythonw.exe"
 
 [Setup]

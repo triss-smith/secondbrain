@@ -63,7 +63,8 @@ if not exist %ISCC% (
     echo Download from: https://jrsoftware.org/isdl.php
     exit /b 1
 )
-%ISCC% installer\SecondBrain.iss
+set /p APP_VERSION=<VERSION
+%ISCC% /DAppVersion=%APP_VERSION% installer\SecondBrain.iss
 if errorlevel 1 (echo ERROR: Inno Setup compilation failed. && exit /b 1)
 echo     Done.
 echo.
