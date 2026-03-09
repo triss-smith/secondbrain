@@ -12,6 +12,7 @@ DefaultDirName={autopf}\SecondBrain
 DefaultGroupName={#AppName}
 OutputDir=..\dist
 OutputBaseFilename=SecondBrain-Setup
+SetupIconFile=..\installer\icon.ico
 Compression=lzma2
 SolidCompression=yes
 PrivilegesRequired=admin
