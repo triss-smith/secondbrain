@@ -32,6 +32,11 @@ PROVIDERS = {
         "sdk": "openai",
         "models": ["gemini-2.0-flash", "gemini-1.5-pro"],
     },
+    "custom": {
+        "base_url": "",
+        "sdk": "openai",
+        "models": [],
+    },
 }
 
 
@@ -43,6 +48,7 @@ class AISettings:
     organize_mode: str = "category"
     similarity_threshold: float = 0.3
     enable_thinking: bool = False
+    custom_base_url: str = ""
 
 
 class SettingsManager:
@@ -60,6 +66,7 @@ class SettingsManager:
                     organize_mode=data.get("organize_mode", "category"),
                     similarity_threshold=float(data.get("similarity_threshold", 0.3)),
                     enable_thinking=bool(data.get("enable_thinking", False)),
+                    custom_base_url=data.get("custom_base_url", ""),
                 )
             except Exception as exc:
                 logger.warning("Failed to load %s, falling back to env defaults: %s", CONFIG_PATH, exc)
@@ -73,7 +80,7 @@ class SettingsManager:
     def get(self) -> AISettings:
         return self._settings
 
-    def save(self, provider: str, model: str, api_key: str, organize_mode: str = "category", similarity_threshold: float = 0.3, enable_thinking: bool = False) -> None:
+    def save(self, provider: str, model: str, api_key: str, organize_mode: str = "category", similarity_threshold: float = 0.3, enable_thinking: bool = False, custom_base_url: str = "") -> None:
         if provider not in PROVIDERS:
             raise ValueError(f"Unknown provider '{provider}'. Valid: {list(PROVIDERS)}")
         if organize_mode not in ("category", "similarity"):
@@ -91,9 +98,10 @@ class SettingsManager:
             "organize_mode": organize_mode,
             "similarity_threshold": similarity_threshold,
             "enable_thinking": enable_thinking,
+            "custom_base_url": custom_base_url,
         }, indent=2))
         tmp.replace(CONFIG_PATH)
-        self._settings = AISettings(provider=provider, model=model, api_key=api_key, organize_mode=organize_mode, similarity_threshold=similarity_threshold, enable_thinking=enable_thinking)
+        self._settings = AISettings(provider=provider, model=model, api_key=api_key, organize_mode=organize_mode, similarity_threshold=similarity_threshold, enable_thinking=enable_thinking, custom_base_url=custom_base_url)
 
 
 settings_manager = SettingsManager()
