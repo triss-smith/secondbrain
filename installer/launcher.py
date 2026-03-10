@@ -109,6 +109,7 @@ def start_server(port: int) -> subprocess.Popen:
     log = _user_data_dir() / "server.log"
     env = os.environ.copy()
     env["SECOND_BRAIN_DATA"] = str(_user_data_dir() / "data")
+    env["PYTHONPATH"] = str(_app_root())
     cmd = (
         "import traceback, sys\n"
         "try:\n"
