@@ -1,6 +1,9 @@
+import logging
 import os
 import uuid
 from typing import Optional
+
+logger = logging.getLogger(__name__)
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from pydantic import BaseModel
@@ -245,15 +248,21 @@ async def _auto_tag_summarize(content: str, title: str) -> tuple[list[str], str,
         )
         cleaned = re.sub(r"^```[a-z]*\n?", "", response.strip(), flags=re.MULTILINE)
         cleaned = re.sub(r"```$", "", cleaned.strip())
-        data = json.loads(cleaned.strip())
+        try:
+            data = json.loads(cleaned.strip())
+        except json.JSONDecodeError:
+            m = re.search(r"\{.*\}", cleaned, re.DOTALL)
+            if not m:
+                raise
+            data = json.loads(m.group())
         tags = data.get("tags", [])
         summary = data.get("summary", "")
         category = data.get("category", "")
         if not tags:
             tags = _keyword_tags(title, content)
         return tags, summary, category
-    except Exception as e:
-        print(f"[auto_tag_summarize] failed: {e}")
+    except Exception:
+        logger.exception("[auto_tag_summarize] failed")
         return _keyword_tags(title, content), "", ""
 
 
