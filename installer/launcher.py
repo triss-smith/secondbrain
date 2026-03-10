@@ -109,9 +109,12 @@ def start_server(port: int) -> subprocess.Popen:
     log = _user_data_dir() / "server.log"
     env = os.environ.copy()
     env["SECOND_BRAIN_DATA"] = str(_user_data_dir() / "data")
+    cmd = (
+        f"import uvicorn; "
+        f"uvicorn.run('backend.main:app', host='127.0.0.1', port={port})"
+    )
     return subprocess.Popen(
-        [str(_python_exe()), "-m", "uvicorn", "backend.main:app",
-         "--host", "127.0.0.1", "--port", str(port)],
+        [str(_python_exe()), "-c", cmd],
         cwd=str(_app_root()),
         env=env,
         stdout=open(log, "w", encoding="utf-8"),
