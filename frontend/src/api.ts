@@ -34,6 +34,9 @@ export const deleteItem = (id: string) =>
 export const resummarizeItem = (id: string) =>
   api.post<Item>(`/items/${id}/resummarize`).then(r => r.data)
 
+export const reformatItem = (id: string) =>
+  api.post<Item>(`/items/${id}/reformat`).then(r => r.data)
+
 export const getItemSimilarities = (item_ids: string[], threshold = 0.55) =>
   api.post<{ source: string; target: string; similarity: number }[]>(
     '/items/similarities',
