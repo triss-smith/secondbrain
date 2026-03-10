@@ -52,6 +52,8 @@ class AISettings:
     similarity_threshold: float = 0.3
     enable_thinking: bool = False
     custom_base_url: str = ""
+    theme_mode: str = "dark"
+    theme_id: str = "violet"
 
 
 class SettingsManager:
@@ -70,6 +72,8 @@ class SettingsManager:
                     similarity_threshold=float(data.get("similarity_threshold", 0.3)),
                     enable_thinking=bool(data.get("enable_thinking", False)),
                     custom_base_url=data.get("custom_base_url", ""),
+                    theme_mode=data.get("theme_mode", "dark"),
+                    theme_id=data.get("theme_id", "violet"),
                 )
             except Exception as exc:
                 logger.warning("Failed to load %s, falling back to env defaults: %s", CONFIG_PATH, exc)
@@ -102,9 +106,47 @@ class SettingsManager:
             "similarity_threshold": similarity_threshold,
             "enable_thinking": enable_thinking,
             "custom_base_url": custom_base_url,
+            "theme_mode": self._settings.theme_mode,
+            "theme_id": self._settings.theme_id,
         }, indent=2))
         tmp.replace(CONFIG_PATH)
-        self._settings = AISettings(provider=provider, model=model, api_key=api_key, organize_mode=organize_mode, similarity_threshold=similarity_threshold, enable_thinking=enable_thinking, custom_base_url=custom_base_url)
+        self._settings = AISettings(
+            provider=provider, model=model, api_key=api_key,
+            organize_mode=organize_mode, similarity_threshold=similarity_threshold,
+            enable_thinking=enable_thinking, custom_base_url=custom_base_url,
+            theme_mode=self._settings.theme_mode, theme_id=self._settings.theme_id,
+        )
+
+    def _write(self) -> None:
+        s = self._settings
+        CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
+        if CONFIG_PATH.exists():
+            shutil.copy2(CONFIG_PATH, BACKUP_PATH)
+        tmp = CONFIG_PATH.with_suffix(".tmp")
+        tmp.write_text(json.dumps({
+            "provider": s.provider,
+            "model": s.model,
+            "api_key": s.api_key,
+            "organize_mode": s.organize_mode,
+            "similarity_threshold": s.similarity_threshold,
+            "enable_thinking": s.enable_thinking,
+            "custom_base_url": s.custom_base_url,
+            "theme_mode": s.theme_mode,
+            "theme_id": s.theme_id,
+        }, indent=2))
+        tmp.replace(CONFIG_PATH)
+
+    def save_theme(self, theme_mode: str, theme_id: str) -> None:
+        if theme_mode not in ("dark", "light"):
+            raise ValueError(f"theme_mode must be 'dark' or 'light', got '{theme_mode}'")
+        s = self._settings
+        self._settings = AISettings(
+            provider=s.provider, model=s.model, api_key=s.api_key,
+            organize_mode=s.organize_mode, similarity_threshold=s.similarity_threshold,
+            enable_thinking=s.enable_thinking, custom_base_url=s.custom_base_url,
+            theme_mode=theme_mode, theme_id=theme_id,
+        )
+        self._write()
 
 
 settings_manager = SettingsManager()

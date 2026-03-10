@@ -17,6 +17,11 @@ class SaveSettingsRequest(BaseModel):
     custom_base_url: str = ""
 
 
+class SaveThemeRequest(BaseModel):
+    theme_mode: str = "dark"
+    theme_id: str = "violet"
+
+
 @router.get("")
 def get_settings():
     s = settings_manager.get()
@@ -29,6 +34,8 @@ def get_settings():
         "enable_thinking": s.enable_thinking,
         "providers": PROVIDERS,
         "custom_base_url": s.custom_base_url,
+        "theme_mode": s.theme_mode,
+        "theme_id": s.theme_id,
     }
 
 
@@ -72,7 +79,16 @@ def save_settings(req: SaveSettingsRequest):
     api_key = req.api_key if req.api_key else settings_manager.get().api_key
     settings_manager.save(req.provider, req.model, api_key, req.organize_mode, req.similarity_threshold, req.enable_thinking, req.custom_base_url)
     s = settings_manager.get()
-    return {"provider": s.provider, "model": s.model, "api_key_set": bool(s.api_key), "organize_mode": s.organize_mode, "similarity_threshold": s.similarity_threshold, "enable_thinking": s.enable_thinking}
+    return {"provider": s.provider, "model": s.model, "api_key_set": bool(s.api_key), "organize_mode": s.organize_mode, "similarity_threshold": s.similarity_threshold, "enable_thinking": s.enable_thinking, "theme_mode": s.theme_mode, "theme_id": s.theme_id}
+
+
+@router.patch("")
+def save_theme(req: SaveThemeRequest):
+    if req.theme_mode not in ("dark", "light"):
+        raise HTTPException(status_code=400, detail="theme_mode must be 'dark' or 'light'")
+    settings_manager.save_theme(req.theme_mode, req.theme_id)
+    s = settings_manager.get()
+    return {"theme_mode": s.theme_mode, "theme_id": s.theme_id}
 
 
 @router.post("/test")
