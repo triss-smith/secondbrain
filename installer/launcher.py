@@ -48,7 +48,14 @@ def _python_exe() -> Path:
 
 
 
+def _msgbox(title: str, message: str) -> None:
+    """Show a Windows message box without requiring tkinter."""
+    import ctypes
+    ctypes.windll.user32.MessageBoxW(0, message, title, 0x10)
+
+
 def start_server(port: int) -> subprocess.Popen:
+    log = _user_data_dir() / "server.log"
     env = os.environ.copy()
     env["SECOND_BRAIN_DATA"] = str(_user_data_dir() / "data")
     return subprocess.Popen(
@@ -56,6 +63,8 @@ def start_server(port: int) -> subprocess.Popen:
          "--host", "127.0.0.1", "--port", str(port)],
         cwd=str(_app_root()),
         env=env,
+        stdout=open(log, "w", encoding="utf-8"),
+        stderr=subprocess.STDOUT,
         creationflags=subprocess.CREATE_NO_WINDOW,
     )
 
@@ -94,17 +103,11 @@ def main() -> None:
 
     if not wait_for_server(f"{url}/api/health", timeout=60):
         server_proc.terminate()
-        import tkinter as tk
-        from tkinter import messagebox
-        root = tk.Tk()
-        root.withdraw()
-        messagebox.showerror(
+        log = _user_data_dir() / "server.log"
+        _msgbox(
             "Second Brain",
-            "Second Brain failed to start.\n\n"
-            "Please check that your API key is set in:\n"
-            r"C:\Program Files\SecondBrain\.env",
+            f"Second Brain failed to start.\n\nSee log for details:\n{log}",
         )
-        root.destroy()
         sys.exit(1)
 
     webbrowser.open(url)
@@ -118,13 +121,8 @@ if __name__ == "__main__":
     except Exception as exc:
         import traceback
         log.write_text(traceback.format_exc(), encoding="utf-8")
-        import tkinter as tk
-        from tkinter import messagebox
-        root = tk.Tk()
-        root.withdraw()
-        messagebox.showerror(
+        _msgbox(
             "Second Brain",
             f"Second Brain failed to start.\n\nError: {exc}\n\nDetails written to:\n{log}",
         )
-        root.destroy()
         sys.exit(1)
