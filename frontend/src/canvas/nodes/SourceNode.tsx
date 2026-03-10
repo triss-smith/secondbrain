@@ -16,9 +16,10 @@ export function SourceNode({ data, selected }: NodeProps<SourceNodeData>) {
 
   return (
     <div
-      className={`w-56 rounded-xl overflow-hidden border transition-all ${
+      className={`w-56 rounded-xl overflow-hidden border transition-all cursor-pointer ${
         selected ? 'border-accent shadow-lg shadow-accent/20' : 'border-surface-3'
       } bg-surface-1`}
+      onClick={() => window.dispatchEvent(new CustomEvent('open-item-detail', { detail: { item_id: item.id } }))}
     >
       <Handle type="target" position={Position.Left} className="!bg-accent !border-0 !w-2 !h-2" />
       <Handle type="source" position={Position.Right} className="!bg-accent !border-0 !w-2 !h-2" />
@@ -57,7 +58,7 @@ export function SourceNode({ data, selected }: NodeProps<SourceNodeData>) {
         )}
 
         {/* Actions */}
-        <div className="flex items-center gap-2 pt-1 border-t border-surface-3">
+        <div className="flex items-center gap-2 pt-1 border-t border-surface-3" onClick={e => e.stopPropagation()}>
           <button
             className="nodrag text-slate-400 hover:text-accent transition-colors p-1 rounded disabled:opacity-40"
             title="Regenerate summary & tags"
@@ -110,5 +111,6 @@ export function SourceNode({ data, selected }: NodeProps<SourceNodeData>) {
         </div>
       </div>
     </div>
+
   )
 }
