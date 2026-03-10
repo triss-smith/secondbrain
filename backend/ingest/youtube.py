@@ -1,10 +1,13 @@
 import asyncio
+import logging
 import re
 
 import yt_dlp
 from youtube_transcript_api import YouTubeTranscriptApi
 
 from backend.ingest.base import IngestResult
+
+logger = logging.getLogger(__name__)
 
 
 def _video_id(url: str) -> str | None:
@@ -13,7 +16,7 @@ def _video_id(url: str) -> str | None:
 
 
 def _ingest_sync(url: str) -> IngestResult:
-    with yt_dlp.YoutubeDL({"skip_download": True, "quiet": True}) as ydl:
+    with yt_dlp.YoutubeDL({"skip_download": True, "quiet": True, "no_warnings": True}) as ydl:
         info = ydl.extract_info(url, download=False)
 
     title = info.get("title", "YouTube Video")
@@ -28,7 +31,8 @@ def _ingest_sync(url: str) -> IngestResult:
         try:
             entries = YouTubeTranscriptApi.get_transcript(video_id)
             transcript_text = " ".join(e["text"] for e in entries)
-        except Exception:
+        except Exception as e:
+            logger.warning("Transcript fetch failed for %s: %s", video_id, e)
             transcript_text = info.get("description", "")
 
     if not transcript_text:
