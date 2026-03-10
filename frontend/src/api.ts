@@ -147,3 +147,13 @@ export const updateConnection = (id: number, type: ConnectionType) =>
 
 export const deleteConnection = (id: number) =>
   api.delete(`/connections/${id}`).then(r => r.data)
+
+// Update
+export interface UpdateStatus {
+  available: boolean
+  version?: string
+  url?: string
+}
+
+export const getUpdateStatus = () =>
+  api.get<UpdateStatus>('/update').then(r => r.data)

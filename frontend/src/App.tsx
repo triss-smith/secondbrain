@@ -6,6 +6,7 @@ import { CaptureBar } from './sidebar/CaptureBar'
 import { Library } from './sidebar/Library'
 import { GlobalChat } from './components/GlobalChat'
 import { SettingsModal } from './components/SettingsModal'
+import { UpdateBanner } from './components/UpdateBanner'
 import { useTheme } from './hooks/useTheme'
 import type { Item } from './types'
 
@@ -70,7 +71,9 @@ export default function App() {
   }
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-surface">
+    <div className="flex flex-col h-screen w-screen overflow-hidden bg-surface">
+      <UpdateBanner />
+      <div className="flex flex-1 overflow-hidden">
       {/* Left sidebar */}
       <aside
         className={`flex flex-col border-r border-surface-3 bg-surface-1 shrink-0 relative ${
@@ -160,6 +163,7 @@ export default function App() {
           onThemeChange={setThemeId}
         />
       )}
+      </div>
     </div>
   )
 }

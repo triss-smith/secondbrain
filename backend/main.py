@@ -10,6 +10,7 @@ from backend.api.chat import router as chat_router
 from backend.api.search import router as search_router
 from backend.api.settings import router as settings_router
 from backend.api.connections import router as connections_router
+from backend.api.update import router as update_router
 from backend.ai.mindmap import compute_mind_map
 
 app = FastAPI(title="Second Brain API", version="0.1.0")
@@ -28,6 +29,7 @@ app.include_router(chat_router)
 app.include_router(search_router)
 app.include_router(settings_router)
 app.include_router(connections_router)
+app.include_router(update_router)
 
 
 @app.get("/api/health")
