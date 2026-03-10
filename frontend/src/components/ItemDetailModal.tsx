@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
-import { X, ExternalLink, PlusSquare, Plus } from 'lucide-react'
-import { getItem, updateItem } from '../api'
+import { X, ExternalLink, PlusSquare, Plus, Sparkles } from 'lucide-react'
+import ReactMarkdown from 'react-markdown'
+import { getItem, updateItem, reformatItem } from '../api'
 import type { Item } from '../types'
 import { CONTENT_TYPE_COLORS, CONTENT_TYPE_LABELS } from '../canvas/nodeUtils'
 
@@ -16,6 +17,7 @@ export function ItemDetailModal({ itemId, onClose, onAddToCanvas }: Props) {
   const [tags, setTags] = useState<string[]>([])
   const [tagInput, setTagInput] = useState('')
   const [savingTags, setSavingTags] = useState(false)
+  const [reformatting, setReformatting] = useState(false)
   const tagInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -57,6 +59,17 @@ export function ItemDetailModal({ itemId, onClose, onAddToCanvas }: Props) {
     const updated = tags.filter(t => t !== tag)
     setTags(updated)
     saveTags(updated)
+  }
+
+  async function handleReformat() {
+    if (!item) return
+    setReformatting(true)
+    try {
+      const updated = await reformatItem(item.id)
+      setItem(updated)
+    } finally {
+      setReformatting(false)
+    }
   }
 
   async function saveTags(updated: string[]) {
@@ -133,6 +146,16 @@ export function ItemDetailModal({ itemId, onClose, onAddToCanvas }: Props) {
           <div className="flex items-center gap-2 shrink-0">
             {item && (
               <button
+                onClick={handleReformat}
+                disabled={reformatting}
+                className="text-slate-400 hover:text-accent p-1.5 rounded-lg transition-colors disabled:opacity-40"
+                title="Reformat content"
+              >
+                <Sparkles size={16} className={reformatting ? 'animate-pulse' : ''} />
+              </button>
+            )}
+            {item && (
+              <button
                 onClick={() => { onAddToCanvas(item); onClose() }}
                 className="text-slate-400 hover:text-accent p-1.5 rounded-lg transition-colors"
                 title="Add to canvas"
@@ -176,9 +199,11 @@ export function ItemDetailModal({ itemId, onClose, onAddToCanvas }: Props) {
               ))}
             </div>
           ) : (
-            <pre className="text-sm text-slate-300 leading-relaxed whitespace-pre-wrap font-sans">
-              {item ? cleanContent(item.content ?? '') : ''}
-            </pre>
+            <div className="prose prose-invert prose-sm max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0">
+              <ReactMarkdown>
+                {item ? (item.formatted_content || cleanContent(item.content ?? '')) : ''}
+              </ReactMarkdown>
+            </div>
           )}
         </div>
       </div>
