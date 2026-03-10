@@ -131,6 +131,16 @@ def update_item(item_id: str, req: UpdateItemRequest, db: Session = Depends(get_
     return _serialize(item)
 
 
+@router.post("/{item_id}/reformat")
+async def reformat_item(item_id: str, db: Session = Depends(get_db)):
+    item = db.query(Item).filter(Item.id == item_id).first()
+    if not item:
+        raise HTTPException(status_code=404, detail="Item not found")
+    item.formatted_content = await _format_content(item.content or "", item.content_type)
+    db.commit()
+    return _serialize(item, include_content=True)
+
+
 @router.post("/{item_id}/resummarize")
 async def resummarize_item(item_id: str, db: Session = Depends(get_db)):
     item = db.query(Item).filter(Item.id == item_id).first()
