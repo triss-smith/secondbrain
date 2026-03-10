@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 
 def _video_id(url: str) -> str | None:
-    match = re.search(r"(?:v=|/v/|youtu\.be/|/embed/)([^&?/\s]+)", url)
+    match = re.search(r"(?:v=|/v/|youtu\.be/|/embed/|/shorts/)([^&?/\s]+)", url)
     return match.group(1) if match else None
 
 
