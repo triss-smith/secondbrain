@@ -22,6 +22,7 @@ export interface Item {
   meta: Record<string, unknown>
   created_at: string
   content?: string
+  formatted_content?: string | null
   category?: string
 }
 

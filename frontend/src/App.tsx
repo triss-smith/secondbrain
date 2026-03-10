@@ -8,12 +8,14 @@ import { GlobalChat } from './components/GlobalChat'
 import { SettingsModal } from './components/SettingsModal'
 import { UpdateBanner } from './components/UpdateBanner'
 import { useTheme } from './hooks/useTheme'
+import { ItemDetailModal } from './components/ItemDetailModal'
 import type { Item } from './types'
 
 export default function App() {
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [chatOpen, setChatOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [detailItemId, setDetailItemId] = useState<string | null>(null)
   const [refreshTrigger, setRefreshTrigger] = useState(0)
   const [sidebarWidth, setSidebarWidth] = useState(288)
   const [chatWidth, setChatWidth] = useState(320)
@@ -28,6 +30,14 @@ export default function App() {
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
+  }, [])
+
+  useEffect(() => {
+    function onOpenDetail(e: Event) {
+      setDetailItemId((e as CustomEvent).detail.item_id)
+    }
+    window.addEventListener('open-item-detail', onOpenDetail)
+    return () => window.removeEventListener('open-item-detail', onOpenDetail)
   }, [])
 
   function startSidebarResize(e: React.MouseEvent) {
@@ -161,6 +171,14 @@ export default function App() {
           onClose={() => setSettingsOpen(false)}
           themeId={themeId}
           onThemeChange={setThemeId}
+        />
+      )}
+
+      {detailItemId && (
+        <ItemDetailModal
+          itemId={detailItemId}
+          onClose={() => setDetailItemId(null)}
+          onAddToCanvas={item => { handleAddToCanvas(item); setDetailItemId(null) }}
         />
       )}
       </div>

@@ -131,6 +131,16 @@ def update_item(item_id: str, req: UpdateItemRequest, db: Session = Depends(get_
     return _serialize(item)
 
 
+@router.post("/{item_id}/reformat")
+async def reformat_item(item_id: str, db: Session = Depends(get_db)):
+    item = db.query(Item).filter(Item.id == item_id).first()
+    if not item:
+        raise HTTPException(status_code=404, detail="Item not found")
+    item.formatted_content = await _format_content(item.content or "", item.content_type)
+    db.commit()
+    return _serialize(item, include_content=True)
+
+
 @router.post("/{item_id}/resummarize")
 async def resummarize_item(item_id: str, db: Session = Depends(get_db)):
     item = db.query(Item).filter(Item.id == item_id).first()
@@ -191,6 +201,7 @@ async def _save_item(result, db: Session, override_title: str | None = None) -> 
 
     # Auto-generate tags + summary via MiniMax
     tags, summary, category = await _auto_tag_summarize(result.content, title)
+    formatted_content = await _format_content(result.content, result.content_type)
 
     item = Item(
         title=title,
@@ -201,6 +212,7 @@ async def _save_item(result, db: Session, override_title: str | None = None) -> 
         thumbnail=result.thumbnail,
         tags=tags,
         category=category,
+        formatted_content=formatted_content,
         meta=result.meta,
     )
     db.add(item)
@@ -246,7 +258,8 @@ async def _auto_tag_summarize(content: str, title: str) -> tuple[list[str], str,
                 }
             ]
         )
-        cleaned = re.sub(r"^```[a-z]*\n?", "", response.strip(), flags=re.MULTILINE)
+        cleaned = re.sub(r"<think>.*?</think>", "", response, flags=re.DOTALL).strip()
+        cleaned = re.sub(r"^```[a-z]*\n?", "", cleaned, flags=re.MULTILINE)
         cleaned = re.sub(r"```$", "", cleaned.strip())
         try:
             data = json.loads(cleaned.strip())
@@ -264,6 +277,33 @@ async def _auto_tag_summarize(content: str, title: str) -> tuple[list[str], str,
     except Exception:
         logger.exception("[auto_tag_summarize] failed")
         return _keyword_tags(title, content), "", ""
+
+
+async def _format_content(content: str, content_type: str) -> str:
+    """Ask the AI to reformat raw content as GitHub-flavored markdown."""
+    try:
+        response = await chat(
+            [
+                {
+                    "role": "user",
+                    "content": (
+                        f"The following is raw extracted text from a {content_type}. "
+                        "Reformat it as clean GitHub-flavored markdown. "
+                        "Use ## headings for sections, bullet points for lists, and paragraphs for prose. "
+                        "Preserve ALL information — do not summarise, omit, or invent anything. "
+                        "Remove redundant header lines like 'Title:', 'Channel:', 'Transcript:'. "
+                        "Return ONLY the formatted markdown, no commentary.\n\n"
+                        f"{content}"
+                    ),
+                }
+            ]
+        )
+        import re
+        cleaned = re.sub(r"<think>.*?</think>", "", response, flags=re.DOTALL).strip()
+        return cleaned or content
+    except Exception:
+        logger.exception("[format_content] failed, keeping original")
+        return content
 
 
 def _keyword_tags(title: str, content: str) -> list[str]:
@@ -298,6 +338,7 @@ def _serialize(item: Item, include_content: bool = False) -> dict:
         "thumbnail": item.thumbnail,
         "tags": item.tags or [],
         "category": item.category or "",
+        "formatted_content": item.formatted_content,
         "meta": item.meta or {},
         "created_at": item.created_at.isoformat() if item.created_at else None,
     }

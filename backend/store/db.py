@@ -35,6 +35,7 @@ class Item(Base):
     thumbnail = Column(String)
     tags = Column(JSON, default=list)
     category = Column(String, default="")
+    formatted_content = Column(Text)
     meta = Column(JSON, default=dict)
     created_at = Column(DateTime, default=datetime.utcnow)
 
@@ -94,4 +95,7 @@ with engine.connect() as conn:
     existing = [row[1] for row in conn.execute(__import__('sqlalchemy').text("PRAGMA table_info(items)"))]
     if "category" not in existing:
         conn.execute(__import__('sqlalchemy').text("ALTER TABLE items ADD COLUMN category TEXT DEFAULT ''"))
+        conn.commit()
+    if "formatted_content" not in existing:
+        conn.execute(__import__('sqlalchemy').text("ALTER TABLE items ADD COLUMN formatted_content TEXT"))
         conn.commit()
