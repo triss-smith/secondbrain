@@ -191,6 +191,7 @@ async def _save_item(result, db: Session, override_title: str | None = None) -> 
 
     # Auto-generate tags + summary via MiniMax
     tags, summary, category = await _auto_tag_summarize(result.content, title)
+    formatted_content = await _format_content(result.content, result.content_type)
 
     item = Item(
         title=title,
@@ -201,6 +202,7 @@ async def _save_item(result, db: Session, override_title: str | None = None) -> 
         thumbnail=result.thumbnail,
         tags=tags,
         category=category,
+        formatted_content=formatted_content,
         meta=result.meta,
     )
     db.add(item)
@@ -266,6 +268,31 @@ async def _auto_tag_summarize(content: str, title: str) -> tuple[list[str], str,
         return _keyword_tags(title, content), "", ""
 
 
+async def _format_content(content: str, content_type: str) -> str:
+    """Ask the AI to reformat raw content as GitHub-flavored markdown."""
+    try:
+        response = await chat(
+            [
+                {
+                    "role": "user",
+                    "content": (
+                        f"The following is raw extracted text from a {content_type}. "
+                        "Reformat it as clean GitHub-flavored markdown. "
+                        "Use ## headings for sections, bullet points for lists, and paragraphs for prose. "
+                        "Preserve ALL information — do not summarise, omit, or invent anything. "
+                        "Remove redundant header lines like 'Title:', 'Channel:', 'Transcript:'. "
+                        "Return ONLY the formatted markdown, no commentary.\n\n"
+                        f"{content}"
+                    ),
+                }
+            ]
+        )
+        return response.strip() or content
+    except Exception:
+        logger.exception("[format_content] failed, keeping original")
+        return content
+
+
 def _keyword_tags(title: str, content: str) -> list[str]:
     """Simple keyword fallback when AI tagging is unavailable."""
     import re
@@ -298,6 +325,7 @@ def _serialize(item: Item, include_content: bool = False) -> dict:
         "thumbnail": item.thumbnail,
         "tags": item.tags or [],
         "category": item.category or "",
+        "formatted_content": item.formatted_content,
         "meta": item.meta or {},
         "created_at": item.created_at.isoformat() if item.created_at else None,
     }
