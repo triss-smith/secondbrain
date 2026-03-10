@@ -258,7 +258,8 @@ async def _auto_tag_summarize(content: str, title: str) -> tuple[list[str], str,
                 }
             ]
         )
-        cleaned = re.sub(r"^```[a-z]*\n?", "", response.strip(), flags=re.MULTILINE)
+        cleaned = re.sub(r"<think>.*?</think>", "", response, flags=re.DOTALL).strip()
+        cleaned = re.sub(r"^```[a-z]*\n?", "", cleaned, flags=re.MULTILINE)
         cleaned = re.sub(r"```$", "", cleaned.strip())
         try:
             data = json.loads(cleaned.strip())
@@ -297,7 +298,9 @@ async def _format_content(content: str, content_type: str) -> str:
                 }
             ]
         )
-        return response.strip() or content
+        import re
+        cleaned = re.sub(r"<think>.*?</think>", "", response, flags=re.DOTALL).strip()
+        return cleaned or content
     except Exception:
         logger.exception("[format_content] failed, keeping original")
         return content
