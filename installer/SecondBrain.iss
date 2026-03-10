@@ -47,10 +47,11 @@ Name: "{commondesktop}\{#AppName}"; Filename: "{app}\python\{#AppExeName}"; Para
 [Code]
 function InitializeUninstall(): Boolean;
 var
-  ResultCode: Integer;
+  DataDir: String;
 begin
   Result := True;
-  if DirExists(ExpandConstant('{app}\data')) then
+  DataDir := ExpandConstant('{userappdata}\SecondBrain');
+  if DirExists(DataDir) then
   begin
     if MsgBox(
       'Do you want to delete your Second Brain data (notes, files, and AI memory)?' + #13#10 +
@@ -58,7 +59,7 @@ begin
       'Click NO to keep your data (you can re-import it later).',
       mbConfirmation, MB_YESNO) = IDYES then
     begin
-      DelTree(ExpandConstant('{app}\data'), True, True, True);
+      DelTree(DataDir, True, True, True);
     end;
   end;
 end;
