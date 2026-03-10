@@ -49,6 +49,12 @@ if exist "%EMBED_DIR%\python.exe" (
 echo     Installing dependencies into embedded Python...
 installer\python-embed\python.exe -m pip install -r requirements.txt --target installer\python-embed\Lib\site-packages --no-warn-script-location
 if errorlevel 1 (echo ERROR: Dependency install failed. && exit /b 1)
+
+:: Remove distutils-precedence.pth — it uses a setuptools shim incompatible with embedded Python
+if exist "installer\python-embed\Lib\site-packages\distutils-precedence.pth" (
+    del "installer\python-embed\Lib\site-packages\distutils-precedence.pth"
+    echo     Removed distutils-precedence.pth
+)
 echo     Done.
 echo.
 
