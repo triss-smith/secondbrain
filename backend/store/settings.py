@@ -7,9 +7,12 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
-_PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
-CONFIG_PATH = _PROJECT_ROOT / "data" / "config.json"
-BACKUP_PATH = _PROJECT_ROOT / "data" / "config.json.bak"
+_DATA_DIR = Path(
+    os.environ.get("SECOND_BRAIN_DATA")
+    or Path(os.environ.get("APPDATA", Path.home())) / "SecondBrain" / "data"
+)
+CONFIG_PATH = _DATA_DIR / "config.json"
+BACKUP_PATH = _DATA_DIR / "config.json.bak"
 
 PROVIDERS = {
     "minimax": {
