@@ -10,6 +10,7 @@ export function SourceNode({ data, selected }: NodeProps<SourceNodeData>) {
   const [summary, setSummary] = useState(item.summary)
   const [tags, setTags] = useState(item.tags)
   const [resummarizing, setResummarizing] = useState(false)
+  const [thumbnailError, setThumbnailError] = useState(false)
   const color = CONTENT_TYPE_COLORS[item.content_type] ?? '#7c6af7'
   const Icon = CONTENT_TYPE_ICONS[item.content_type]
   const label = CONTENT_TYPE_LABELS[item.content_type]
@@ -25,8 +26,13 @@ export function SourceNode({ data, selected }: NodeProps<SourceNodeData>) {
       <Handle type="source" position={Position.Right} className="!bg-accent !border-0 !w-2 !h-2" />
 
       {/* Thumbnail */}
-      {item.thumbnail ? (
-        <img src={item.thumbnail} alt="" className="w-full h-32 object-cover" />
+      {item.thumbnail && !thumbnailError ? (
+        <img
+          src={item.thumbnail}
+          alt=""
+          className="w-full h-32 object-cover"
+          onError={() => setThumbnailError(true)}
+        />
       ) : (
         <div className="w-full h-20 flex items-center justify-center" style={{ background: `${color}22` }}>
           {Icon && <Icon size={32} style={{ color }} />}
