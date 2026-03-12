@@ -5,6 +5,8 @@ import { THEMES } from '../themes'
 import { Modal, ModalHeader, ModalBody } from './ui/Modal'
 import { Button } from './ui/Button'
 import { Toggle } from './ui/Toggle'
+import { TextInput } from './ui/TextInput'
+import { Select } from './ui/Select'
 
 interface Props {
   onClose: () => void
@@ -126,31 +128,27 @@ export function SettingsModal({ onClose, themeId, onThemeChange }: Props) {
             <div className="text-center py-8 text-slate-500 text-xs">Loading...</div>
           ) : (
             <>
-              <div>
-                <label className="block text-xs font-medium text-slate-400 mb-1.5">Provider</label>
-                <select
-                  value={provider}
-                  onChange={e => handleProviderChange(e.target.value)}
-                  className="w-full bg-surface-2 border border-surface-3 text-white text-xs rounded-lg px-3 py-2 outline-none focus:border-accent transition-colors"
-                >
+              <Select
+                label="Provider"
+                value={provider}
+                onChange={e => handleProviderChange(e.target.value)}
+              >
                   {Object.keys(data.providers).map(p => (
                     <option key={p} value={p}>
                       {p.charAt(0).toUpperCase() + p.slice(1)}
                     </option>
                   ))}
-                </select>
-              </div>
+              </Select>
 
               <div>
                 <label className="block text-xs font-medium text-slate-400 mb-1.5">Model</label>
                 {provider === 'custom' ? (
                   <div className="space-y-2">
-                    <input
+                    <TextInput
                       type="text"
                       value={customBaseUrl}
                       onChange={e => { setCustomBaseUrl(e.target.value); setCustomModels([]); setModel(''); setFetchModelsError(null) }}
                       placeholder="http://localhost:11434"
-                      className="w-full bg-surface-2 border border-surface-3 text-white text-xs rounded-lg px-3 py-2 outline-none focus:border-accent transition-colors placeholder-slate-600"
                     />
                     <button
                       onClick={handleFetchModels}
@@ -163,42 +161,35 @@ export function SettingsModal({ onClose, themeId, onThemeChange }: Props) {
                       <p className="text-xs text-red-400">{fetchModelsError}</p>
                     )}
                     {customModels.length > 0 && (
-                      <select
+                      <Select
                         value={model}
                         onChange={e => setModel(e.target.value)}
-                        className="w-full bg-surface-2 border border-surface-3 text-white text-xs rounded-lg px-3 py-2 outline-none focus:border-accent transition-colors"
                       >
                         {customModels.map(m => (
                           <option key={m} value={m}>{m}</option>
                         ))}
-                      </select>
+                      </Select>
                     )}
                   </div>
                 ) : (
-                  <select
+                  <Select
                     value={model}
                     onChange={e => setModel(e.target.value)}
-                    className="w-full bg-surface-2 border border-surface-3 text-white text-xs rounded-lg px-3 py-2 outline-none focus:border-accent transition-colors"
                   >
                     {models.map(m => (
                       <option key={m} value={m}>{m}</option>
                     ))}
-                  </select>
+                  </Select>
                 )}
               </div>
 
-              <div>
-                <label className="block text-xs font-medium text-slate-400 mb-1.5">
-                  API Key{provider === 'custom' ? ' (optional)' : ''}
-                </label>
-                <input
-                  type="password"
-                  value={apiKey}
-                  onChange={e => setApiKey(e.target.value)}
-                  placeholder={provider === 'custom' ? 'Leave blank if not required' : (data.api_key_set ? '••••••••••••••••' : 'Enter your API key...')}
-                  className="w-full bg-surface-2 border border-surface-3 text-white text-xs rounded-lg px-3 py-2 outline-none focus:border-accent transition-colors placeholder-slate-600"
-                />
-              </div>
+              <TextInput
+                type="password"
+                label={`API Key${provider === 'custom' ? ' (optional)' : ''}`}
+                value={apiKey}
+                onChange={e => setApiKey(e.target.value)}
+                placeholder={provider === 'custom' ? 'Leave blank if not required' : (data.api_key_set ? '••••••••••••••••' : 'Enter your API key...')}
+              />
 
               {/* Theme */}
               <div>

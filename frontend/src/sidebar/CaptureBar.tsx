@@ -3,6 +3,7 @@ import { Link2, FileUp, Loader2, StickyNote, X } from 'lucide-react'
 import { useIngest } from '../hooks/useIngest'
 import { NoteModal } from '../components/NoteModal'
 import type { Item } from '../types'
+import { TextInput } from '../components/ui/TextInput'
 
 interface Props {
   onIngested: (item: Item) => void
@@ -55,8 +56,7 @@ export function CaptureBar({ onIngested }: Props) {
 
       <input ref={fileRef} type="file" accept=".pdf,.txt,.md" className="hidden" onChange={handleFile} />
 
-      <input
-        className="w-full bg-surface-2 text-xs text-white placeholder-slate-500 rounded-lg px-3 py-2 outline-none border border-transparent focus:border-accent transition-colors"
+      <TextInput
         placeholder="Paste a YouTube, TikTok, article URL..."
         value={input}
         onChange={e => setInput(e.target.value)}

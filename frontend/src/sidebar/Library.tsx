@@ -9,6 +9,7 @@ import type { Item } from '../types'
 import { CONTENT_TYPE_COLORS, CONTENT_TYPE_ICONS, CONTENT_TYPE_LABELS } from '../canvas/nodeUtils'
 import { ItemDetailModal } from '../components/ItemDetailModal'
 import { ItemCard } from '../components/items/ItemCard'
+import { TextInput } from '../components/ui/TextInput'
 
 interface Props {
   onAddToCanvas: (item: Item) => void
@@ -92,8 +93,8 @@ export function Library({ onAddToCanvas, refreshTrigger }: Props) {
       <div className="p-3 border-b border-surface-3">
         <div className="flex items-center gap-2 bg-surface-2 rounded-lg px-3 py-2">
           <Search size={13} className="text-slate-500 shrink-0" />
-          <input
-            className="flex-1 bg-transparent text-xs text-white placeholder-slate-500 outline-none"
+          <TextInput
+            className="flex-1 bg-transparent border-none px-0 py-0"
             placeholder="Semantic search..."
             value={query}
             onChange={e => setQuery(e.target.value)}
