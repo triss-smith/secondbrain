@@ -2,22 +2,7 @@ import { useState } from 'react'
 import { EdgeLabelRenderer, getBezierPath, type EdgeProps } from 'reactflow'
 import type { ConnectionType } from '../../types'
 import { deleteConnection, updateConnection } from '../../api'
-
-const TYPE_COLORS: Record<ConnectionType, string> = {
-  related: '#60a5fa',
-  source: '#34d399',
-  inspired_by: '#f59e0b',
-  contradicts: '#f87171',
-}
-
-const TYPE_LABELS: Record<ConnectionType, string> = {
-  related: 'Related',
-  source: 'Source',
-  inspired_by: 'Inspired by',
-  contradicts: 'Contradicts',
-}
-
-const CONNECTION_TYPES: ConnectionType[] = ['related', 'source', 'inspired_by', 'contradicts']
+import { CONNECTION_TYPES, CONNECTION_TYPE_CONFIG } from '../../connectionConfig'
 
 export function ManualEdge({
   id,
@@ -35,7 +20,8 @@ export function ManualEdge({
 
   const connType = (data?.type as ConnectionType) ?? 'related'
   const connId = data?.conn_id as number
-  const color = TYPE_COLORS[connType]
+  const cfg = CONNECTION_TYPE_CONFIG[connType]
+  const color = cfg.color
 
   function handleDelete() {
     if (!connId) return
@@ -81,7 +67,7 @@ export function ManualEdge({
             className="text-[9px] px-1.5 py-0.5 rounded-full pointer-events-none font-medium"
             style={{ backgroundColor: `${color}22`, color, border: `1px solid ${color}44` }}
           >
-            {TYPE_LABELS[connType]}
+            {cfg.label}
           </span>
 
           {/* Hover actions */}
@@ -105,17 +91,19 @@ export function ManualEdge({
           {/* Change type menu */}
           {showMenu && (
             <div className="pointer-events-auto bg-surface-1 border border-surface-3 rounded-lg p-1.5 flex flex-col gap-1 shadow-xl">
-              {CONNECTION_TYPES.map(t => (
-                <button
-                  key={t}
-                  onClick={() => handleChangeType(t)}
-                  className="text-left text-[10px] px-2 py-1 rounded hover:bg-surface-2 transition-colors flex items-center gap-1.5"
-                  style={{ color: TYPE_COLORS[t] }}
-                >
-                  <span className="w-2 h-2 rounded-full inline-block" style={{ backgroundColor: TYPE_COLORS[t] }} />
-                  {TYPE_LABELS[t]}
-                </button>
-              ))}
+              {CONNECTION_TYPES.map(t => {
+                const tCfg = CONNECTION_TYPE_CONFIG[t]
+                return (
+                  <button
+                    key={t}
+                    onClick={() => handleChangeType(t)}
+                    className="text-left text-[10px] px-2 py-1 rounded hover:bg-surface-2 transition-colors flex items-center gap-1.5"
+                    style={{ color: tCfg.color }}
+                  >
+                    <span className="w-2 h-2 rounded-full inline-block" style={{ backgroundColor: tCfg.color }} />
+                    {tCfg.label}
+                  </button>
+              )})}
               <button
                 onClick={() => setShowMenu(false)}
                 className="text-[9px] text-slate-500 hover:text-white text-center mt-0.5"

@@ -1,20 +1,5 @@
 import type { ConnectionType } from '../types'
-
-const TYPE_COLORS: Record<ConnectionType, string> = {
-  related: '#60a5fa',
-  source: '#34d399',
-  inspired_by: '#f59e0b',
-  contradicts: '#f87171',
-}
-
-const TYPE_LABELS: Record<ConnectionType, string> = {
-  related: 'Related',
-  source: 'Source',
-  inspired_by: 'Inspired by',
-  contradicts: 'Contradicts',
-}
-
-const CONNECTION_TYPES: ConnectionType[] = ['related', 'source', 'inspired_by', 'contradicts']
+import { CONNECTION_TYPES, CONNECTION_TYPE_CONFIG } from '../connectionConfig'
 
 interface Props {
   x: number
@@ -38,16 +23,18 @@ export function ConnectionTypePicker({ x, y, onPick, onDismiss }: Props) {
           Connection type
         </p>
         <div className="flex flex-col gap-1">
-          {CONNECTION_TYPES.map(t => (
+          {CONNECTION_TYPES.map(t => {
+            const cfg = CONNECTION_TYPE_CONFIG[t]
+            return (
             <button
               key={t}
               onClick={() => onPick(t)}
               className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-surface-2 transition-colors text-left"
             >
-              <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: TYPE_COLORS[t] }} />
-              <span className="text-xs font-medium" style={{ color: TYPE_COLORS[t] }}>{TYPE_LABELS[t]}</span>
+              <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: cfg.color }} />
+              <span className="text-xs font-medium" style={{ color: cfg.color }}>{cfg.label}</span>
             </button>
-          ))}
+          )})}
         </div>
       </div>
     </>
