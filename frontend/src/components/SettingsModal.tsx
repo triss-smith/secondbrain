@@ -3,6 +3,8 @@ import { CheckCircle, XCircle, Loader2 } from 'lucide-react'
 import { getSettings, saveSettings, testConnection, fetchCustomModels, type SettingsResponse } from '../api'
 import { THEMES } from '../themes'
 import { Modal, ModalHeader, ModalBody } from './ui/Modal'
+import { Button } from './ui/Button'
+import { Toggle } from './ui/Toggle'
 
 interface Props {
   onClose: () => void
@@ -268,12 +270,7 @@ export function SettingsModal({ onClose, themeId, onThemeChange }: Props) {
                   <p className="text-xs font-medium text-slate-400">Enable reasoning</p>
                   <p className="text-xs text-slate-600 mt-0.5">Lets the model think before responding. Slower but more accurate for complex questions.</p>
                 </div>
-                <button
-                  onClick={() => setEnableThinking(v => !v)}
-                  className={`relative ml-4 shrink-0 w-9 h-5 rounded-full transition-colors ${enableThinking ? 'bg-accent' : 'bg-surface-3'}`}
-                >
-                  <span className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${enableThinking ? 'translate-x-4' : 'translate-x-0'}`} />
-                </button>
+                <Toggle checked={enableThinking} onChange={setEnableThinking} />
               </div>
 
               {testResult && (
@@ -295,20 +292,25 @@ export function SettingsModal({ onClose, themeId, onThemeChange }: Props) {
       )}
       <div className="px-5 pb-5">
         <div className="flex items-center justify-between">
-          <button
+          <Button
+            variant="secondary"
             onClick={handleTest}
             disabled={testing || !data}
-            className="text-xs text-slate-400 hover:text-white px-4 py-2 rounded-lg border border-surface-3 hover:border-slate-500 transition-colors disabled:opacity-40 flex items-center gap-2"
+            loading={testing}
+            className="flex items-center gap-2"
           >
-            {testing ? <><Loader2 size={12} className="animate-spin" /> Testing...</> : 'Test Connection'}
-          </button>
-          <button
+            {testing && <Loader2 size={12} className="animate-spin" />}
+            {testing ? 'Testing...' : 'Test Connection'}
+          </Button>
+          <Button
+            variant="primary"
             onClick={handleSave}
             disabled={saving || !data}
-            className="bg-accent hover:bg-accent-hover disabled:opacity-50 text-white text-xs font-semibold px-5 py-2 rounded-lg transition-colors flex items-center gap-2"
+            loading={saving}
+            className="flex items-center gap-2"
           >
-            {saving ? <><Loader2 size={12} className="animate-spin" /> Saving...</> : saved ? '✓ Saved' : 'Save'}
-          </button>
+            {saving ? 'Saving...' : saved ? '✓ Saved' : 'Save'}
+          </Button>
         </div>
       </div>
     </Modal>

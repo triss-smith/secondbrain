@@ -10,6 +10,7 @@ import { UpdateBanner } from './components/UpdateBanner'
 import { useTheme } from './hooks/useTheme'
 import { ItemDetailModal } from './components/ItemDetailModal'
 import type { Item } from './types'
+import { Button } from './components/ui/Button'
 
 export default function App() {
   const [sidebarOpen, setSidebarOpen] = useState(true)
@@ -94,20 +95,22 @@ export default function App() {
         <div className="flex items-center gap-2.5 px-4 py-4 border-b border-surface-3 shrink-0">
           <Brain size={20} className="text-accent" />
           <span className="text-sm font-bold text-white flex-1">Second Brain</span>
-          <button
+          <Button
+            size="icon"
+            variant="ghost"
             onClick={toggleMode}
-            className="text-slate-500 hover:text-white transition-colors p-1 rounded-lg"
             title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
           >
             {isDark ? <Sun size={14} /> : <Moon size={14} />}
-          </button>
-          <button
+          </Button>
+          <Button
+            size="icon"
+            variant="ghost"
             onClick={() => setSettingsOpen(true)}
-            className="text-slate-500 hover:text-white transition-colors p-1 rounded-lg"
             title="Settings"
           >
             <Settings size={14} />
-          </button>
+          </Button>
         </div>
         <Library onAddToCanvas={handleAddToCanvas} refreshTrigger={refreshTrigger} />
         <CaptureBar onIngested={handleIngested} />
