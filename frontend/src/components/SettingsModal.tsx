@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
-import { X, CheckCircle, XCircle, Loader2 } from 'lucide-react'
+import { CheckCircle, XCircle, Loader2 } from 'lucide-react'
 import { getSettings, saveSettings, testConnection, fetchCustomModels, type SettingsResponse } from '../api'
 import { THEMES } from '../themes'
+import { Modal, ModalHeader, ModalBody } from './ui/Modal'
 
 interface Props {
   onClose: () => void
@@ -116,19 +117,9 @@ export function SettingsModal({ onClose, themeId, onThemeChange }: Props) {
   }
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
-      onClick={e => e.target === e.currentTarget && onClose()}
-    >
-      <div className="w-full max-w-md bg-surface-1 border border-surface-3 rounded-2xl shadow-2xl">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-surface-3">
-          <h2 className="text-sm font-semibold text-white">Settings</h2>
-          <button onClick={onClose} className="text-slate-400 hover:text-white transition-colors">
-            <X size={16} />
-          </button>
-        </div>
-
-        <div className="p-5 space-y-4">
+    <Modal isOpen onClose={onClose} size="sm" ariaLabel="Settings">
+      <ModalHeader title="Settings" onClose={onClose} />
+      <ModalBody className="space-y-4">
           {!data ? (
             <div className="text-center py-8 text-slate-500 text-xs">Loading...</div>
           ) : (
@@ -295,14 +286,15 @@ export function SettingsModal({ onClose, themeId, onThemeChange }: Props) {
               )}
             </>
           )}
-        </div>
+      </ModalBody>
 
-        {saveError && (
-          <div className="flex items-center gap-2 text-xs px-5 pb-2 text-red-400">
-            <XCircle size={13} /> {saveError}
-          </div>
-        )}
-        <div className="flex items-center justify-between px-5 pb-5">
+      {saveError && (
+        <div className="flex items-center gap-2 text-xs px-5 pb-2 text-red-400">
+          <XCircle size={13} /> {saveError}
+        </div>
+      )}
+      <div className="px-5 pb-5">
+        <div className="flex items-center justify-between">
           <button
             onClick={handleTest}
             disabled={testing || !data}
@@ -319,6 +311,6 @@ export function SettingsModal({ onClose, themeId, onThemeChange }: Props) {
           </button>
         </div>
       </div>
-    </div>
+    </Modal>
   )
 }
