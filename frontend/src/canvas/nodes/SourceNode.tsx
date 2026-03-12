@@ -2,7 +2,9 @@ import { useState } from 'react'
 import { Handle, Position, type NodeProps } from 'reactflow'
 import { ExternalLink, Trash2, MessageSquarePlus, RefreshCw } from 'lucide-react'
 import type { SourceNodeData } from '../../types'
-import { CONTENT_TYPE_COLORS, CONTENT_TYPE_ICONS, CONTENT_TYPE_LABELS } from '../nodeUtils'
+import { CONTENT_TYPE_COLORS, CONTENT_TYPE_ICONS } from '../nodeUtils'
+import { ItemBadge } from '../../components/items/ItemBadge'
+import { TagChip } from '../../components/items/TagChip'
 import { resummarizeItem } from '../../api'
 
 export function SourceNode({ data, selected }: NodeProps<SourceNodeData>) {
@@ -13,7 +15,6 @@ export function SourceNode({ data, selected }: NodeProps<SourceNodeData>) {
   const [thumbnailError, setThumbnailError] = useState(false)
   const color = CONTENT_TYPE_COLORS[item.content_type] ?? '#7c6af7'
   const Icon = CONTENT_TYPE_ICONS[item.content_type]
-  const label = CONTENT_TYPE_LABELS[item.content_type]
 
   return (
     <div
@@ -40,18 +41,11 @@ export function SourceNode({ data, selected }: NodeProps<SourceNodeData>) {
       )}
 
       <div className="p-3">
-        {/* Type badge */}
+        {/* Type badge + tags */}
         <div className="flex items-center gap-1.5 mb-2">
-          <span
-            className="text-[10px] font-semibold px-2 py-0.5 rounded-full"
-            style={{ background: `${color}33`, color }}
-          >
-            {label}
-          </span>
+          <ItemBadge contentType={item.content_type} />
           {tags.slice(0, 2).map(tag => (
-            <span key={tag} className="text-[10px] px-1.5 py-0.5 rounded-full bg-surface-3 text-slate-400">
-              {tag}
-            </span>
+            <TagChip key={tag} label={tag} />
           ))}
         </div>
 
