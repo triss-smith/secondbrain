@@ -6,6 +6,7 @@ import type { Item } from '../types'
 import { CONTENT_TYPE_LABELS } from '../canvas/nodeUtils'
 import { ChatMessages } from './chat/ChatMessages'
 import { ChatInput } from './chat/ChatInput'
+import { ChatSuggestions } from './chat/ChatSuggestions'
 
 interface Props {
   onClose: () => void
@@ -105,19 +106,7 @@ export function GlobalChat({ onClose }: Props) {
           <div className="text-center pt-8 space-y-3">
             <p className="text-sm font-medium text-white">Ask your Second Brain</p>
             <p className="text-xs text-slate-500">Ask anything — I'll search across all your saved notes, videos, articles, and more.</p>
-            {suggestions.length > 0 && (
-              <div className="space-y-2 pt-2">
-                {suggestions.map(suggestion => (
-                  <button
-                    key={suggestion}
-                    onClick={() => send(suggestion)}
-                    className="w-full text-left text-xs text-slate-400 hover:text-white bg-surface-2 hover:bg-surface-3 px-3 py-2 rounded-lg transition-colors"
-                  >
-                    {suggestion}
-                  </button>
-                ))}
-              </div>
-            )}
+            <ChatSuggestions suggestions={suggestions} onSelect={send} />
           </div>
         )}
 
