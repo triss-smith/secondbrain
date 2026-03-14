@@ -87,7 +87,7 @@ export function Board({ isDark = true }: Props) {
           source: itemToNodeId[c.source_item_id],
           target: itemToNodeId[c.target_item_id],
           type: 'manual' as const,
-          data: { conn_id: c.id, type: c.type },
+          data: { conn_id: c.id, type: c.type, auto_generated: c.auto_generated },
         }))
 
       setEdges([...baseEdges, ...manualEdges])
