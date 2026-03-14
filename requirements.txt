@@ -20,3 +20,4 @@ websockets
 aiofiles
 pystray
 Pillow
+playwright
