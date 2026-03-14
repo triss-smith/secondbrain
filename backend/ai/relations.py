@@ -45,7 +45,7 @@ def _classify_pair(similarity: float, nli_probs: list[float]) -> Optional[str]:
     contradiction, entailment, _ = nli_probs
     if contradiction >= CONTRADICTION_THRESHOLD:
         return "contradicts"
-    if entailment >= SUPPORT_THRESHOLD and similarity >= RELATED_FLOOR:
+    if entailment >= SUPPORT_THRESHOLD:
         return "supports"
     if similarity >= RELATED_FLOOR:
         return "related"
@@ -56,11 +56,8 @@ def detect_connections(item_id: str, item_content: str, db) -> list[dict]:
     """
     Find auto-generated connections for a newly ingested item.
 
-    Returns a list of connection dicts ready to insert:
-      {source_item_id, target_item_id, type, auto_generated: True}
-
-    The new item is always the source (premise). If NLI returns entailment,
-    the new item supports the candidate (new -> candidate).
+    Returns a list of dicts: {"target_id": str, "type": str}
+    Returns [] if the NLI model is unavailable.
     """
     from backend.store.vectors import search
     from backend.ai.embed import embed_text
@@ -90,7 +87,11 @@ def detect_connections(item_id: str, item_content: str, db) -> list[dict]:
         for i in db.query(Item).filter(Item.id.in_(candidate_ids)).all()
     }
 
-    nli = _get_nli_model()
+    try:
+        nli = _get_nli_model()
+    except Exception:
+        logger.warning("[relations] NLI model unavailable, skipping auto-detection")
+        return []
     pairs = []
     valid_candidates = []
     for cand_id, similarity in candidates:
@@ -127,10 +128,8 @@ def detect_connections(item_id: str, item_content: str, db) -> list[dict]:
             continue
 
         results.append({
-            "source_item_id": item_id,
-            "target_item_id": cand_id,
+            "target_id": cand_id,
             "type": conn_type,
-            "auto_generated": True,
         })
 
     logger.info("[relations] detected %d connections for item %s", len(results), item_id)
