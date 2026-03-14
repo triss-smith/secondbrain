@@ -146,7 +146,7 @@ async def resummarize_item(item_id: str, db: Session = Depends(get_db)):
     item = db.query(Item).filter(Item.id == item_id).first()
     if not item:
         raise HTTPException(status_code=404, detail="Item not found")
-    tags, summary, category = await _auto_tag_summarize(item.content or "", item.title)
+    tags, summary, category, _ = await _auto_tag_summarize(item.content or "", item.title)
     if tags:
         item.tags = tags
     if summary:
@@ -199,8 +199,11 @@ def get_similarities(req: SimilaritiesRequest):
 async def _save_item(result, db: Session, override_title: str | None = None) -> dict:
     title = override_title or result.title
 
-    # Auto-generate tags + summary via MiniMax
-    tags, summary, category = await _auto_tag_summarize(result.content, title)
+    # Auto-generate tags + summary via MiniMax; request AI title for sources with poor auto-titles
+    generate_title = not override_title and result.meta.get("generate_title", False)
+    tags, summary, category, ai_title = await _auto_tag_summarize(result.content, title, generate_title=generate_title)
+    if ai_title:
+        title = ai_title
     formatted_content = await _format_content(result.content, result.content_type)
 
     item = Item(
@@ -236,9 +239,14 @@ async def _save_item(result, db: Session, override_title: str | None = None) -> 
     return _serialize(item)
 
 
-async def _auto_tag_summarize(content: str, title: str) -> tuple[list[str], str, str]:
+async def _auto_tag_summarize(content: str, title: str, generate_title: bool = False) -> tuple[list[str], str, str, str]:
     import json, re
     snippet = content[:3000]
+    title_instruction = (
+        '- "title": a concise, descriptive title (max 80 chars) for the content. '
+        "Should capture the main point, not just the author's name.\n"
+        if generate_title else ""
+    )
     try:
         response = await chat(
             [
@@ -246,7 +254,8 @@ async def _auto_tag_summarize(content: str, title: str) -> tuple[list[str], str,
                     "role": "user",
                     "content": (
                         f"Title: {title}\n\nContent snippet:\n{snippet}\n\n"
-                        "Return a JSON object with three keys:\n"
+                        f"Return a JSON object with {'four' if generate_title else 'three'} keys:\n"
+                        + title_instruction +
                         '- "category": a single broad domain in title case (e.g. "Cooking", "Fitness", "Personal Finance", "Software Engineering"). '
                         "This is a high-level grouping label — never a specific item or title (e.g. use 'Cooking', not 'Potato Soup').\n"
                         '- "tags": array of 3-5 specific lowercase tags describing the exact topic (e.g. "potato soup", "weight loss", "index funds"). '
@@ -271,12 +280,13 @@ async def _auto_tag_summarize(content: str, title: str) -> tuple[list[str], str,
         tags = data.get("tags", [])
         summary = data.get("summary", "")
         category = data.get("category", "")
+        generated_title = data.get("title", "")
         if not tags:
             tags = _keyword_tags(title, content)
-        return tags, summary, category
+        return tags, summary, category, generated_title
     except Exception:
         logger.exception("[auto_tag_summarize] failed")
-        return _keyword_tags(title, content), "", ""
+        return _keyword_tags(title, content), "", "", ""
 
 
 async def _format_content(content: str, content_type: str) -> str:
