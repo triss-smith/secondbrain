@@ -16,6 +16,8 @@ CONTRADICTION_THRESHOLD = 0.50
 SUPPORT_THRESHOLD = 0.55
 RELATED_FLOOR = 0.50
 MAX_CANDIDATES = 10
+NLI_CONTENT_LIMIT = 512   # chars fed to the NLI model per item
+EMBED_CONTENT_LIMIT = 1000  # chars embedded for candidate retrieval
 
 _nli_model = None
 
@@ -63,8 +65,11 @@ def detect_connections(item_id: str, item_content: str, db) -> list[dict]:
     from backend.ai.embed import embed_text
     from backend.store.db import Item, Connection
 
+    if not item_content or not item_content.strip():
+        return []
+
     # Embed a representative snippet of the new item
-    query_embedding = embed_text(item_content[:1000])
+    query_embedding = embed_text(item_content[:EMBED_CONTENT_LIMIT])
 
     raw_candidates = search(query_embedding, n_results=MAX_CANDIDATES + 5)
 
@@ -98,7 +103,7 @@ def detect_connections(item_id: str, item_content: str, db) -> list[dict]:
         cand_item = items_by_id.get(cand_id)
         if not cand_item or not cand_item.content:
             continue
-        pairs.append((item_content[:512], cand_item.content[:512]))
+        pairs.append((item_content[:NLI_CONTENT_LIMIT], cand_item.content[:NLI_CONTENT_LIMIT]))
         valid_candidates.append((cand_id, similarity))
 
     if not pairs:
