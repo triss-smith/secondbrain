@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Column, DateTime, ForeignKey, Integer, JSON, String, Text, UniqueConstraint, create_engine
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, JSON, String, Text, UniqueConstraint, create_engine
 from sqlalchemy.orm import declarative_base, relationship, sessionmaker
 
 from backend.config import settings
@@ -82,6 +82,7 @@ class Connection(Base):
     source_item_id = Column(String, ForeignKey("items.id", ondelete="CASCADE"), nullable=False)
     target_item_id = Column(String, ForeignKey("items.id", ondelete="CASCADE"), nullable=False)
     type = Column(String, nullable=False, default="related")
+    auto_generated = Column(Boolean, nullable=False, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
     __table_args__ = (
         UniqueConstraint('source_item_id', 'target_item_id', name='uq_connection_pair'),
@@ -98,4 +99,12 @@ with engine.connect() as conn:
         conn.commit()
     if "formatted_content" not in existing:
         conn.execute(__import__('sqlalchemy').text("ALTER TABLE items ADD COLUMN formatted_content TEXT"))
+        conn.commit()
+
+with engine.connect() as conn:
+    conn_cols = [row[1] for row in conn.execute(__import__('sqlalchemy').text("PRAGMA table_info(connections)"))]
+    if "auto_generated" not in conn_cols:
+        conn.execute(__import__('sqlalchemy').text(
+            "ALTER TABLE connections ADD COLUMN auto_generated INTEGER NOT NULL DEFAULT 0"
+        ))
         conn.commit()

@@ -7,7 +7,7 @@ from backend.store.db import get_db, Connection
 
 router = APIRouter(prefix="/api/connections", tags=["connections"])
 
-VALID_TYPES = {"related", "source", "inspired_by", "contradicts"}
+VALID_TYPES = {"related", "source", "inspired_by", "contradicts", "supports", "duplicate"}
 
 
 class ConnectionCreate(BaseModel):
@@ -26,6 +26,7 @@ def _serialize(c: Connection) -> dict:
         "source_item_id": c.source_item_id,
         "target_item_id": c.target_item_id,
         "type": c.type,
+        "auto_generated": bool(c.auto_generated),
         "created_at": c.created_at.isoformat(),
     }
 
