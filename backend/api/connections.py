@@ -137,14 +137,27 @@ def auto_generate_connections(db: Session = Depends(get_db)):
                 # Normalize: smaller ID first
                 if src_item_id > tgt_item_id:
                     src_item_id, tgt_item_id = tgt_item_id, src_item_id
-                db.add(Connection(
+
+                # Check if semantic connection already exists (may conflict with NLI connection)
+                existing = db.query(Connection).filter_by(
                     source_item_id=src_item_id,
                     target_item_id=tgt_item_id,
-                    type="related",
-                    is_semantic=True,
-                    similarity=similarity,
-                    dismissed=False,
-                ))
+                ).first()
+
+                if existing:
+                    # Update existing to be semantic
+                    existing.is_semantic = True
+                    existing.similarity = similarity
+                    existing.dismissed = False
+                else:
+                    db.add(Connection(
+                        source_item_id=src_item_id,
+                        target_item_id=tgt_item_id,
+                        type="related",
+                        is_semantic=True,
+                        similarity=similarity,
+                        dismissed=False,
+                    ))
         db.commit()
     except Exception:
         logger.exception("[auto_generate] failed for semantic edges")
