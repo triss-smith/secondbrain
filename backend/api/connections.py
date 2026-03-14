@@ -90,18 +90,22 @@ def delete_connection(conn_id: int, db: Session = Depends(get_db)):
 def auto_generate_connections(db: Session = Depends(get_db)):
     """
     Retroactively detect auto-generated connections across all items.
-    Clears all existing auto-generated connections first, then re-runs detection for every item.
+    Clears all existing auto-generated and semantic connections first,
+    then re-runs detection for both NLI-based connections and similarity-based semantic edges.
     """
     from backend.store.db import Item
     from backend.ai.relations import detect_connections
+    from backend.ai.mindmap import compute_mind_map
 
-    # Clear existing auto-generated connections
+    # Clear existing auto-generated connections and semantic connections
     db.query(Connection).filter_by(auto_generated=True).delete()
+    db.query(Connection).filter_by(is_semantic=True).delete()
     db.commit()
 
     items = db.query(Item).all()
-    total_created = 0
+    total_nli_created = 0
 
+    # Generate NLI-based connections
     for item in items:
         if not item.content:
             continue
@@ -116,11 +120,36 @@ def auto_generate_connections(db: Session = Depends(get_db)):
                 ))
             if found:
                 db.commit()
-                total_created += len(found)
+                total_nli_created += len(found)
         except Exception:
             logger.exception("[auto_generate] failed for item %s — skipping", item.id)
 
-    return {"connections_created": total_created}
+    # Generate semantic connections from similarity
+    try:
+        mindmap = compute_mind_map(threshold=0.30)
+        for edge in mindmap.get("edges", []):
+            src = edge.get("source", "")
+            tgt = edge.get("target", "")
+            if src.startswith("mm-") and tgt.startswith("mm-"):
+                src_item_id = src[3:]  # strip "mm-"
+                tgt_item_id = tgt[3:]
+                similarity = edge.get("data", {}).get("similarity", 0.5)
+                # Normalize: smaller ID first
+                if src_item_id > tgt_item_id:
+                    src_item_id, tgt_item_id = tgt_item_id, src_item_id
+                db.add(Connection(
+                    source_item_id=src_item_id,
+                    target_item_id=tgt_item_id,
+                    type="related",
+                    is_semantic=True,
+                    similarity=similarity,
+                    dismissed=False,
+                ))
+        db.commit()
+    except Exception:
+        logger.exception("[auto_generate] failed for semantic edges")
+
+    return {"connections_created": total_nli_created}
 
 
 class SemanticConnectionCreate(BaseModel):
