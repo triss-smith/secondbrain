@@ -38,8 +38,8 @@ def health():
 
 
 @app.get("/api/mind-map")
-def get_mind_map():
-    return compute_mind_map()
+def get_mind_map(threshold: float = 0.40):
+    return compute_mind_map(threshold=threshold)
 
 
 # Serve built frontend in production

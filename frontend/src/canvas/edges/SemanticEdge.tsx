@@ -24,7 +24,7 @@ export function SemanticEdge({
   const similarity = data?.similarity as number | undefined
 
   function handleDelete() {
-    window.dispatchEvent(new CustomEvent('remove-semantic-edge', { detail: { edge_id: id } }))
+    window.dispatchEvent(new CustomEvent('remove-semantic-edge', { detail: { edge_id: id, similarity } }))
   }
 
   return (

@@ -140,8 +140,8 @@ export interface RawMindMapResponse {
   edges: RawMindMapEdge[]
 }
 
-export const getMindMap = () =>
-  api.get<RawMindMapResponse>('/mind-map').then(r => r.data)
+export const getMindMap = (threshold = 0.40) =>
+  api.get<RawMindMapResponse>('/mind-map', { params: { threshold } }).then(r => r.data)
 
 // Connections
 export const listConnections = () =>
@@ -155,6 +155,18 @@ export const updateConnection = (id: number, type: ConnectionType) =>
 
 export const deleteConnection = (id: number) =>
   api.delete(`/connections/${id}`).then(r => r.data)
+
+export async function autoGenerateConnections(): Promise<{ connections_created: number }> {
+  const res = await fetch('/api/connections/auto-generate', { method: 'POST' })
+  if (!res.ok) throw new Error('Auto-generate failed')
+  return res.json()
+}
+
+export const upsertSemanticConnection = (source_item_id: string, target_item_id: string, similarity: number) =>
+  api.post<Connection>('/connections/semantic', { source_item_id, target_item_id, similarity }).then(r => r.data)
+
+export const dismissSemanticConnection = (source_item_id: string, target_item_id: string, similarity: number) =>
+  api.post<Connection>('/connections/semantic/dismiss', { source_item_id, target_item_id, similarity }).then(r => r.data)
 
 // Update
 export interface UpdateStatus {

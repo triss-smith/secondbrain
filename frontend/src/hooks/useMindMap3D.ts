@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { forceSimulation, forceLink, forceManyBody, forceCenter, type SimLink } from 'd3-force-3d'
-import { getMindMap, listConnections } from '../api'
+import { getMindMap, listConnections, getSettings } from '../api'
 import type { ContentType, Connection } from '../types'
 
 export interface SimNode3D {
@@ -45,8 +45,10 @@ export function useMindMap3D(): MindMap3DState {
   })
 
   useEffect(() => {
-    Promise.all([getMindMap(), listConnections()])
-      .then(([raw, conns]) => {
+    getSettings().then(s => {
+      const threshold = (s.similarity_threshold as number) ?? 0.40
+      return Promise.all([getMindMap(threshold), listConnections()])
+        .then(([raw, conns]) => {
         // Count degree per node
         const degreeMap: Record<string, number> = {}
         raw.nodes.forEach(n => { degreeMap[n.id] = 0 })
@@ -138,6 +140,7 @@ export function useMindMap3D(): MindMap3DState {
       .catch(err => {
         setState(prev => ({ ...prev, loading: false, error: String(err) }))
       })
+    })
   }, [])
 
   return state

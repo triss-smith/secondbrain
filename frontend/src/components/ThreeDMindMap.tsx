@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import * as THREE from 'three'
 import { Canvas, useThree } from '@react-three/fiber'
 import { OrbitControls, Html } from '@react-three/drei'
 import { X } from 'lucide-react'
@@ -181,21 +182,41 @@ function Edges({
     return new Float32Array(pts)
   }, [simEdges, nodeById])
 
-  // User connections — one buffer per type
-  const connPositionsByType = useMemo(() => {
+  // User connections — split into manual (solid) and auto-generated (dashed), one buffer per type each
+  const manualConnPositionsByType = useMemo(() => {
     const byType: Partial<Record<ConnectionType, number[]>> = {}
     for (const conn of userConnections) {
+      if (conn.auto_generated) continue
       const srcNode = nodeByItemId[conn.source_item_id]
       const tgtNode = nodeByItemId[conn.target_item_id]
       if (!srcNode || !tgtNode) continue
       if (!byType[conn.type]) byType[conn.type] = []
       byType[conn.type]!.push(srcNode.x, srcNode.y, srcNode.z, tgtNode.x, tgtNode.y, tgtNode.z)
     }
-    // Convert to Float32Array here, not in render
     return Object.fromEntries(
       Object.entries(byType).map(([type, pts]) => [type, new Float32Array(pts!)])
     ) as Partial<Record<ConnectionType, Float32Array>>
   }, [userConnections, nodeByItemId])
+
+  const autoConnPositionsByType = useMemo(() => {
+    const byType: Partial<Record<ConnectionType, number[]>> = {}
+    for (const conn of userConnections) {
+      if (!conn.auto_generated) continue
+      const srcNode = nodeByItemId[conn.source_item_id]
+      const tgtNode = nodeByItemId[conn.target_item_id]
+      if (!srcNode || !tgtNode) continue
+      if (!byType[conn.type]) byType[conn.type] = []
+      byType[conn.type]!.push(srcNode.x, srcNode.y, srcNode.z, tgtNode.x, tgtNode.y, tgtNode.z)
+    }
+    return Object.fromEntries(
+      Object.entries(byType).map(([type, pts]) => [type, new Float32Array(pts!)])
+    ) as Partial<Record<ConnectionType, Float32Array>>
+  }, [userConnections, nodeByItemId])
+
+  const dashedRefs = useRef<Record<string, THREE.LineSegments>>({})
+  useEffect(() => {
+    Object.values(dashedRefs.current).forEach(ls => ls?.computeLineDistances())
+  }, [autoConnPositionsByType])
 
   const catPositions = useMemo(() => {
     if (categoryNodes.length === 0) return new Float32Array(0)
@@ -229,14 +250,28 @@ function Edges({
           <lineBasicMaterial color="#e2e8f0" opacity={0.12} transparent depthWrite={false} />
         </lineSegments>
       )}
-      {(Object.entries(connPositionsByType) as [ConnectionType, Float32Array][]).map(([type, arr]) => {
+      {(Object.entries(manualConnPositionsByType) as [ConnectionType, Float32Array][]).map(([type, arr]) => {
         const cfg = CONNECTION_TYPE_CONFIG[type]
         return (
-          <lineSegments key={type}>
+          <lineSegments key={`manual-${type}`}>
             <bufferGeometry>
               <bufferAttribute attach="attributes-position" args={[arr, 3]} />
             </bufferGeometry>
             <lineBasicMaterial color={cfg.color} opacity={0.8} transparent depthWrite={false} />
+          </lineSegments>
+        )
+      })}
+      {(Object.entries(autoConnPositionsByType) as [ConnectionType, Float32Array][]).map(([type, arr]) => {
+        const cfg = CONNECTION_TYPE_CONFIG[type]
+        return (
+          <lineSegments
+            key={`auto-${type}`}
+            ref={el => { if (el) dashedRefs.current[type] = el as THREE.LineSegments }}
+          >
+            <bufferGeometry>
+              <bufferAttribute attach="attributes-position" args={[arr, 3]} />
+            </bufferGeometry>
+            <lineDashedMaterial color={cfg.color} opacity={0.45} transparent depthWrite={false} dashSize={1.5} gapSize={0.8} />
           </lineSegments>
         )
       })}
