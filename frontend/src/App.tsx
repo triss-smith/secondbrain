@@ -10,6 +10,38 @@ import { UpdateBanner } from './components/UpdateBanner'
 import { useTheme } from './hooks/useTheme'
 import { ItemDetailModal } from './components/ItemDetailModal'
 import type { Item } from './types'
+import { Button } from './components/ui/Button'
+
+interface SidebarHeaderProps {
+  isDark: boolean
+  onToggleTheme: () => void
+  onOpenSettings: () => void
+}
+
+function SidebarHeader({ isDark, onToggleTheme, onOpenSettings }: SidebarHeaderProps) {
+  return (
+    <div className="flex items-center gap-2.5 px-4 py-4 border-b border-surface-3 shrink-0">
+      <Brain size={20} className="text-accent" />
+      <span className="text-sm font-bold text-white flex-1">Second Brain</span>
+      <Button
+        size="icon"
+        variant="ghost"
+        onClick={onToggleTheme}
+        title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+      >
+        {isDark ? <Sun size={14} /> : <Moon size={14} />}
+      </Button>
+      <Button
+        size="icon"
+        variant="ghost"
+        onClick={onOpenSettings}
+        title="Settings"
+      >
+        <Settings size={14} />
+      </Button>
+    </div>
+  )
+}
 
 export default function App() {
   const [sidebarOpen, setSidebarOpen] = useState(true)
@@ -91,24 +123,11 @@ export default function App() {
         }`}
         style={sidebarOpen ? { width: sidebarWidth } : undefined}
       >
-        <div className="flex items-center gap-2.5 px-4 py-4 border-b border-surface-3 shrink-0">
-          <Brain size={20} className="text-accent" />
-          <span className="text-sm font-bold text-white flex-1">Second Brain</span>
-          <button
-            onClick={toggleMode}
-            className="text-slate-500 hover:text-white transition-colors p-1 rounded-lg"
-            title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
-          >
-            {isDark ? <Sun size={14} /> : <Moon size={14} />}
-          </button>
-          <button
-            onClick={() => setSettingsOpen(true)}
-            className="text-slate-500 hover:text-white transition-colors p-1 rounded-lg"
-            title="Settings"
-          >
-            <Settings size={14} />
-          </button>
-        </div>
+        <SidebarHeader
+          isDark={isDark}
+          onToggleTheme={toggleMode}
+          onOpenSettings={() => setSettingsOpen(true)}
+        />
         <Library onAddToCanvas={handleAddToCanvas} refreshTrigger={refreshTrigger} />
         <CaptureBar onIngested={handleIngested} />
         {/* Sidebar resize handle */}

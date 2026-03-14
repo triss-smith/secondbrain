@@ -3,7 +3,8 @@ import { X, ExternalLink, PlusSquare, Plus, Sparkles } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import { getItem, updateItem, reformatItem } from '../api'
 import type { Item } from '../types'
-import { CONTENT_TYPE_COLORS, CONTENT_TYPE_LABELS } from '../canvas/nodeUtils'
+import { CONTENT_TYPE_COLORS } from '../canvas/nodeUtils'
+import { ItemBadge } from './items/ItemBadge'
 
 interface Props {
   itemId: string
@@ -37,7 +38,6 @@ export function ItemDetailModal({ itemId, onClose, onAddToCanvas }: Props) {
   }, [onClose])
 
   const color = item ? (CONTENT_TYPE_COLORS[item.content_type] ?? '#7c6af7') : '#7c6af7'
-  const label = item ? CONTENT_TYPE_LABELS[item.content_type] : ''
 
   function cleanContent(raw: string): string {
     const lines = raw.split('\n')
@@ -96,12 +96,11 @@ export function ItemDetailModal({ itemId, onClose, onAddToCanvas }: Props) {
               <div className="h-5 w-48 bg-surface-3 rounded animate-pulse" />
             ) : (
               <>
-                <span
-                  className="text-[10px] font-semibold px-2 py-0.5 rounded-full mb-2 inline-block"
-                  style={{ background: `${color}33`, color }}
-                >
-                  {label}
-                </span>
+                {item && (
+                  <div className="mb-2">
+                    <ItemBadge contentType={item.content_type} />
+                  </div>
+                )}
                 <h2 className="text-base font-bold text-white leading-snug mt-1">{item?.title}</h2>
 
                 {/* Tags */}

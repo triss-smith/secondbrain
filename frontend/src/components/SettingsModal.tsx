@@ -1,7 +1,12 @@
 import { useEffect, useState } from 'react'
-import { X, CheckCircle, XCircle, Loader2 } from 'lucide-react'
+import { CheckCircle, XCircle, Loader2 } from 'lucide-react'
 import { getSettings, saveSettings, testConnection, fetchCustomModels, type SettingsResponse } from '../api'
 import { THEMES } from '../themes'
+import { Modal, ModalHeader, ModalBody } from './ui/Modal'
+import { Button } from './ui/Button'
+import { Toggle } from './ui/Toggle'
+import { TextInput } from './ui/TextInput'
+import { Select } from './ui/Select'
 
 interface Props {
   onClose: () => void
@@ -116,48 +121,34 @@ export function SettingsModal({ onClose, themeId, onThemeChange }: Props) {
   }
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
-      onClick={e => e.target === e.currentTarget && onClose()}
-    >
-      <div className="w-full max-w-md bg-surface-1 border border-surface-3 rounded-2xl shadow-2xl">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-surface-3">
-          <h2 className="text-sm font-semibold text-white">Settings</h2>
-          <button onClick={onClose} className="text-slate-400 hover:text-white transition-colors">
-            <X size={16} />
-          </button>
-        </div>
-
-        <div className="p-5 space-y-4">
+    <Modal isOpen onClose={onClose} size="sm" ariaLabel="Settings">
+      <ModalHeader title="Settings" onClose={onClose} />
+      <ModalBody className="space-y-4">
           {!data ? (
             <div className="text-center py-8 text-slate-500 text-xs">Loading...</div>
           ) : (
             <>
-              <div>
-                <label className="block text-xs font-medium text-slate-400 mb-1.5">Provider</label>
-                <select
-                  value={provider}
-                  onChange={e => handleProviderChange(e.target.value)}
-                  className="w-full bg-surface-2 border border-surface-3 text-white text-xs rounded-lg px-3 py-2 outline-none focus:border-accent transition-colors"
-                >
+              <Select
+                label="Provider"
+                value={provider}
+                onChange={e => handleProviderChange(e.target.value)}
+              >
                   {Object.keys(data.providers).map(p => (
                     <option key={p} value={p}>
                       {p.charAt(0).toUpperCase() + p.slice(1)}
                     </option>
                   ))}
-                </select>
-              </div>
+              </Select>
 
               <div>
                 <label className="block text-xs font-medium text-slate-400 mb-1.5">Model</label>
                 {provider === 'custom' ? (
                   <div className="space-y-2">
-                    <input
+                    <TextInput
                       type="text"
                       value={customBaseUrl}
                       onChange={e => { setCustomBaseUrl(e.target.value); setCustomModels([]); setModel(''); setFetchModelsError(null) }}
                       placeholder="http://localhost:11434"
-                      className="w-full bg-surface-2 border border-surface-3 text-white text-xs rounded-lg px-3 py-2 outline-none focus:border-accent transition-colors placeholder-slate-600"
                     />
                     <button
                       onClick={handleFetchModels}
@@ -170,42 +161,35 @@ export function SettingsModal({ onClose, themeId, onThemeChange }: Props) {
                       <p className="text-xs text-red-400">{fetchModelsError}</p>
                     )}
                     {customModels.length > 0 && (
-                      <select
+                      <Select
                         value={model}
                         onChange={e => setModel(e.target.value)}
-                        className="w-full bg-surface-2 border border-surface-3 text-white text-xs rounded-lg px-3 py-2 outline-none focus:border-accent transition-colors"
                       >
                         {customModels.map(m => (
                           <option key={m} value={m}>{m}</option>
                         ))}
-                      </select>
+                      </Select>
                     )}
                   </div>
                 ) : (
-                  <select
+                  <Select
                     value={model}
                     onChange={e => setModel(e.target.value)}
-                    className="w-full bg-surface-2 border border-surface-3 text-white text-xs rounded-lg px-3 py-2 outline-none focus:border-accent transition-colors"
                   >
                     {models.map(m => (
                       <option key={m} value={m}>{m}</option>
                     ))}
-                  </select>
+                  </Select>
                 )}
               </div>
 
-              <div>
-                <label className="block text-xs font-medium text-slate-400 mb-1.5">
-                  API Key{provider === 'custom' ? ' (optional)' : ''}
-                </label>
-                <input
-                  type="password"
-                  value={apiKey}
-                  onChange={e => setApiKey(e.target.value)}
-                  placeholder={provider === 'custom' ? 'Leave blank if not required' : (data.api_key_set ? '••••••••••••••••' : 'Enter your API key...')}
-                  className="w-full bg-surface-2 border border-surface-3 text-white text-xs rounded-lg px-3 py-2 outline-none focus:border-accent transition-colors placeholder-slate-600"
-                />
-              </div>
+              <TextInput
+                type="password"
+                label={`API Key${provider === 'custom' ? ' (optional)' : ''}`}
+                value={apiKey}
+                onChange={e => setApiKey(e.target.value)}
+                placeholder={provider === 'custom' ? 'Leave blank if not required' : (data.api_key_set ? '••••••••••••••••' : 'Enter your API key...')}
+              />
 
               {/* Theme */}
               <div>
@@ -277,12 +261,7 @@ export function SettingsModal({ onClose, themeId, onThemeChange }: Props) {
                   <p className="text-xs font-medium text-slate-400">Enable reasoning</p>
                   <p className="text-xs text-slate-600 mt-0.5">Lets the model think before responding. Slower but more accurate for complex questions.</p>
                 </div>
-                <button
-                  onClick={() => setEnableThinking(v => !v)}
-                  className={`relative ml-4 shrink-0 w-9 h-5 rounded-full transition-colors ${enableThinking ? 'bg-accent' : 'bg-surface-3'}`}
-                >
-                  <span className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${enableThinking ? 'translate-x-4' : 'translate-x-0'}`} />
-                </button>
+                <Toggle checked={enableThinking} onChange={setEnableThinking} />
               </div>
 
               {testResult && (
@@ -295,30 +274,36 @@ export function SettingsModal({ onClose, themeId, onThemeChange }: Props) {
               )}
             </>
           )}
-        </div>
+      </ModalBody>
 
-        {saveError && (
-          <div className="flex items-center gap-2 text-xs px-5 pb-2 text-red-400">
-            <XCircle size={13} /> {saveError}
-          </div>
-        )}
-        <div className="flex items-center justify-between px-5 pb-5">
-          <button
+      {saveError && (
+        <div className="flex items-center gap-2 text-xs px-5 pb-2 text-red-400">
+          <XCircle size={13} /> {saveError}
+        </div>
+      )}
+      <div className="px-5 pb-5">
+        <div className="flex items-center justify-between">
+          <Button
+            variant="secondary"
             onClick={handleTest}
             disabled={testing || !data}
-            className="text-xs text-slate-400 hover:text-white px-4 py-2 rounded-lg border border-surface-3 hover:border-slate-500 transition-colors disabled:opacity-40 flex items-center gap-2"
+            loading={testing}
+            className="flex items-center gap-2"
           >
-            {testing ? <><Loader2 size={12} className="animate-spin" /> Testing...</> : 'Test Connection'}
-          </button>
-          <button
+            {testing && <Loader2 size={12} className="animate-spin" />}
+            {testing ? 'Testing...' : 'Test Connection'}
+          </Button>
+          <Button
+            variant="primary"
             onClick={handleSave}
             disabled={saving || !data}
-            className="bg-accent hover:bg-accent-hover disabled:opacity-50 text-white text-xs font-semibold px-5 py-2 rounded-lg transition-colors flex items-center gap-2"
+            loading={saving}
+            className="flex items-center gap-2"
           >
-            {saving ? <><Loader2 size={12} className="animate-spin" /> Saving...</> : saved ? '✓ Saved' : 'Save'}
-          </button>
+            {saving ? 'Saving...' : saved ? '✓ Saved' : 'Save'}
+          </Button>
         </div>
       </div>
-    </div>
+    </Modal>
   )
 }

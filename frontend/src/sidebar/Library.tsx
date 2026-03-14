@@ -8,6 +8,8 @@ import { listItemsGrouped, semanticSearch, deleteItem, resummarizeItem } from '.
 import type { Item } from '../types'
 import { CONTENT_TYPE_COLORS, CONTENT_TYPE_ICONS, CONTENT_TYPE_LABELS } from '../canvas/nodeUtils'
 import { ItemDetailModal } from '../components/ItemDetailModal'
+import { ItemCard } from '../components/items/ItemCard'
+import { TextInput } from '../components/ui/TextInput'
 
 interface Props {
   onAddToCanvas: (item: Item) => void
@@ -91,8 +93,8 @@ export function Library({ onAddToCanvas, refreshTrigger }: Props) {
       <div className="p-3 border-b border-surface-3">
         <div className="flex items-center gap-2 bg-surface-2 rounded-lg px-3 py-2">
           <Search size={13} className="text-slate-500 shrink-0" />
-          <input
-            className="flex-1 bg-transparent text-xs text-white placeholder-slate-500 outline-none"
+          <TextInput
+            className="flex-1 bg-transparent border-none px-0 py-0"
             placeholder="Semantic search..."
             value={query}
             onChange={e => setQuery(e.target.value)}
@@ -144,6 +146,7 @@ export function Library({ onAddToCanvas, refreshTrigger }: Props) {
                 <LibraryItem
                   key={item.id}
                   item={item}
+                  category={group.label}
                   onAdd={onAddToCanvas}
                   onClick={() => setSelectedItemId(item.id)}
                   onDelete={() => removeItem(item.id)}
@@ -181,32 +184,17 @@ function LibraryItem({
   const label = CONTENT_TYPE_LABELS[item.content_type]
   const [summary, setSummary] = useState(item.summary)
   const [resummarizing, setResummarizing] = useState(false)
+  const categoryLabel = category ? formatLabel(category) : undefined
 
   return (
     <div onClick={onClick} className="flex items-start gap-3 px-3 py-2.5 hover:bg-surface-2 transition-colors group border-b border-surface-3/50 cursor-pointer">
-      <div
-        className="shrink-0 w-10 h-10 rounded-lg overflow-hidden flex items-center justify-center"
-        style={{ background: `${color}22` }}
-      >
-        {item.thumbnail ? (
-          <img src={item.thumbnail} alt="" className="w-full h-full object-cover" />
-        ) : (
-          <Icon size={18} style={{ color }} />
-        )}
-      </div>
-
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-1 mb-0.5">
-          <span className="text-[9px] font-semibold" style={{ color }}>{label}</span>
-          {category && (
-            <span className="text-[9px] text-slate-600">· {formatLabel(category)}</span>
-          )}
-        </div>
-        <p className="text-xs font-medium text-white leading-snug truncate">{item.title}</p>
-        {(summary || item.snippet) && (
-          <p className="text-[10px] text-slate-500 line-clamp-2 mt-0.5">{summary || item.snippet}</p>
-        )}
-      </div>
+      <ItemCard
+        item={{ ...item, summary: summary ?? item.summary }}
+        compact
+        showThumbnail
+        onClick={onClick}
+        categoryLabel={categoryLabel}
+      />
 
       <div className={`flex flex-col gap-1 transition-all ${resummarizing ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
         <button

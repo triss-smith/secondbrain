@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
-import { Send, Loader2, Trash2, X } from 'lucide-react'
-import ReactMarkdown from 'react-markdown'
+import { Trash2, X } from 'lucide-react'
 import { useChat } from '../hooks/useChat'
 import { listItems } from '../api'
 import type { Item } from '../types'
 import { CONTENT_TYPE_LABELS } from '../canvas/nodeUtils'
+import { ChatMessages } from './chat/ChatMessages'
+import { ChatInput } from './chat/ChatInput'
+import { ChatSuggestions } from './chat/ChatSuggestions'
 
 interface Props {
   onClose: () => void
@@ -99,99 +101,25 @@ export function GlobalChat({ onClose }: Props) {
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className="flex-1">
         {messages.length === 0 && (
           <div className="text-center pt-8 space-y-3">
             <p className="text-sm font-medium text-white">Ask your Second Brain</p>
             <p className="text-xs text-slate-500">Ask anything — I'll search across all your saved notes, videos, articles, and more.</p>
-            {suggestions.length > 0 && (
-              <div className="space-y-2 pt-2">
-                {suggestions.map(suggestion => (
-                  <button
-                    key={suggestion}
-                    onClick={() => send(suggestion)}
-                    className="w-full text-left text-xs text-slate-400 hover:text-white bg-surface-2 hover:bg-surface-3 px-3 py-2 rounded-lg transition-colors"
-                  >
-                    {suggestion}
-                  </button>
-                ))}
-              </div>
-            )}
+            <ChatSuggestions suggestions={suggestions} onSelect={send} />
           </div>
         )}
 
-        {messages.map((msg, i) => (
-          <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-            {msg.role === 'assistant' && (
-              <div className="w-6 h-6 rounded-full bg-accent/20 border border-accent/40 flex items-center justify-center shrink-0 mr-2 mt-0.5">
-                <span className="text-[9px] font-bold text-accent">AI</span>
-              </div>
-            )}
-            <div
-              className={`max-w-[85%] rounded-2xl px-3 py-2 text-xs leading-relaxed ${
-                msg.role === 'user'
-                  ? 'bg-accent text-white rounded-tr-sm'
-                  : 'bg-surface-2 text-slate-200 rounded-tl-sm'
-              }`}
-            >
-              {msg.role === 'assistant'
-                ? <div className="prose prose-invert prose-xs max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0"><ReactMarkdown>{msg.content}</ReactMarkdown></div>
-                : msg.content}
-            </div>
-          </div>
-        ))}
-
-        {/* Typing indicator — shows while waiting for first token */}
-        {streaming && messages[messages.length - 1]?.role === 'user' && (
-          <div className="flex justify-start">
-            <div className="w-6 h-6 rounded-full bg-accent/20 border border-accent/40 flex items-center justify-center shrink-0 mr-2 mt-0.5">
-              <span className="text-[9px] font-bold text-accent">AI</span>
-            </div>
-            <div className="bg-surface-2 rounded-2xl rounded-tl-sm px-4 py-3 flex items-center gap-1">
-              <span className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-              <span className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-              <span className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-            </div>
-          </div>
-        )}
-
-        {error && (
-          <p className="text-xs text-red-400 text-center bg-red-900/20 rounded-lg px-3 py-2">{error}</p>
-        )}
-        <div ref={bottomRef} />
+        <ChatMessages messages={messages} streaming={streaming} error={error} bottomRef={bottomRef} />
       </div>
-
       {/* Input */}
-      <div className="p-3 border-t border-surface-3 shrink-0">
-        <div className="flex items-end gap-2 bg-surface-2 rounded-xl px-3 py-2 border border-transparent focus-within:border-accent transition-colors">
-          <textarea
-            ref={inputRef}
-            className="flex-1 bg-transparent text-xs text-white placeholder-slate-500 outline-none resize-none max-h-32"
-            placeholder="Ask your brain anything..."
-            rows={1}
-            value={input}
-            onChange={e => {
-              setInput(e.target.value)
-              e.target.style.height = 'auto'
-              e.target.style.height = `${e.target.scrollHeight}px`
-            }}
-            onKeyDown={e => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault()
-                handleSend()
-              }
-            }}
-          />
-          <button
-            onClick={handleSend}
-            disabled={streaming || !input.trim()}
-            className="text-accent disabled:text-slate-600 transition-colors shrink-0 pb-0.5"
-          >
-            {streaming ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
-          </button>
-        </div>
-        <p className="text-[10px] text-slate-600 text-center mt-1.5">Enter to send · Shift+Enter for new line</p>
-      </div>
+      <ChatInput
+        value={input}
+        onChange={setInput}
+        onSend={handleSend}
+        streaming={streaming}
+        autoFocus
+      />
     </div>
   )
 }

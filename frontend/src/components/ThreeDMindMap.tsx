@@ -6,13 +6,7 @@ import { useMindMap3D, type SimNode3D, type SimEdge3D } from '../hooks/useMindMa
 import { ItemDetailModal } from './ItemDetailModal'
 import { CONTENT_TYPE_COLORS } from '../canvas/nodeUtils'
 import type { Item, Connection, ConnectionType } from '../types'
-
-const CONN_COLORS: Record<ConnectionType, string> = {
-  related: '#60a5fa',
-  source: '#34d399',
-  inspired_by: '#f59e0b',
-  contradicts: '#f87171',
-}
+import { CONNECTION_TYPE_CONFIG } from '../connectionConfig'
 
 // ── Sub-components (must be inside Canvas for r3f hooks) ──────────────────
 
@@ -235,14 +229,17 @@ function Edges({
           <lineBasicMaterial color="#e2e8f0" opacity={0.12} transparent depthWrite={false} />
         </lineSegments>
       )}
-      {(Object.entries(connPositionsByType) as [ConnectionType, Float32Array][]).map(([type, arr]) => (
-        <lineSegments key={type}>
-          <bufferGeometry>
-            <bufferAttribute attach="attributes-position" args={[arr, 3]} />
-          </bufferGeometry>
-          <lineBasicMaterial color={CONN_COLORS[type]} opacity={0.8} transparent depthWrite={false} />
-        </lineSegments>
-      ))}
+      {(Object.entries(connPositionsByType) as [ConnectionType, Float32Array][]).map(([type, arr]) => {
+        const cfg = CONNECTION_TYPE_CONFIG[type]
+        return (
+          <lineSegments key={type}>
+            <bufferGeometry>
+              <bufferAttribute attach="attributes-position" args={[arr, 3]} />
+            </bufferGeometry>
+            <lineBasicMaterial color={cfg.color} opacity={0.8} transparent depthWrite={false} />
+          </lineSegments>
+        )
+      })}
     </>
   )
 }
