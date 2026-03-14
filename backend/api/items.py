@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 from backend.ai.embed import chunk_text, embed_batch
 from backend.ai.client import chat
 from backend.ingest.base import ingest_file, ingest_text, ingest_url
-from backend.store.db import Chunk, Item, get_db
+from backend.store.db import Chunk, Connection, Item, get_db
 from backend.store import vectors
 from backend.config import settings
 
@@ -236,10 +236,9 @@ async def _save_item(result, db: Session, override_title: str | None = None) -> 
     # Auto-detect connections to existing brain items (must be after upsert_chunks)
     try:
         from backend.ai.relations import detect_connections
-        from backend.store.db import Connection as ConnectionModel
         found = detect_connections(item.id, result.content, db)
         for c in found:
-            db.add(ConnectionModel(
+            db.add(Connection(
                 source_item_id=item.id,
                 target_item_id=c["target_id"],
                 type=c["type"],
