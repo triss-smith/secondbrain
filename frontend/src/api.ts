@@ -140,8 +140,8 @@ export interface RawMindMapResponse {
   edges: RawMindMapEdge[]
 }
 
-export const getMindMap = () =>
-  api.get<RawMindMapResponse>('/mind-map').then(r => r.data)
+export const getMindMap = (threshold = 0.40) =>
+  api.get<RawMindMapResponse>('/mind-map', { params: { threshold } }).then(r => r.data)
 
 // Connections
 export const listConnections = () =>
