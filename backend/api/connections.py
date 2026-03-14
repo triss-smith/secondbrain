@@ -188,7 +188,7 @@ def upsert_semantic_connection(body: SemanticConnectionCreate, db: Session = Dep
 
     if conn:
         conn.similarity = body.similarity
-        conn.dismissed = False  # Re-create if it was dismissed
+        # Preserve dismissed state if already dismissed
     else:
         conn = Connection(
             source_item_id=src,
