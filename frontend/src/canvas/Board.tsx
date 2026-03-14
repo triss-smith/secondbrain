@@ -246,7 +246,7 @@ export function Board({ isDark = true }: Props) {
 
     function onItemDeleted(e: Event) {
       const { item_id } = (e as CustomEvent).detail
-      // Remove source nodes for this item and update chat nodes
+      const removedNodeId = `source-${item_id}`
       setNodes(ns => ns
         .filter(n => n.data?.item?.id !== item_id)
         .map(n => {
@@ -256,6 +256,7 @@ export function Board({ isDark = true }: Props) {
           return n
         })
       )
+      setEdges(es => es.filter(e => e.source !== removedNodeId && e.target !== removedNodeId))
     }
 
     function onRemoveManualEdge(e: Event) {
