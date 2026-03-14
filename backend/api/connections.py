@@ -1,9 +1,13 @@
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from backend.store.db import get_db, Connection
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/connections", tags=["connections"])
 
@@ -77,3 +81,40 @@ def delete_connection(conn_id: int, db: Session = Depends(get_db)):
         raise HTTPException(404, "Connection not found")
     db.delete(conn)
     db.commit()
+
+
+@router.post("/auto-generate", status_code=200)
+def auto_generate_connections(db: Session = Depends(get_db)):
+    """
+    Retroactively detect auto-generated connections across all items.
+    Clears all existing auto-generated connections first, then re-runs detection for every item.
+    """
+    from backend.store.db import Item
+    from backend.ai.relations import detect_connections
+
+    # Clear existing auto-generated connections
+    db.query(Connection).filter_by(auto_generated=True).delete()
+    db.commit()
+
+    items = db.query(Item).all()
+    total_created = 0
+
+    for item in items:
+        if not item.content:
+            continue
+        try:
+            found = detect_connections(item.id, item.content, db)
+            for c in found:
+                db.add(Connection(
+                    source_item_id=item.id,
+                    target_item_id=c["target_id"],
+                    type=c["type"],
+                    auto_generated=True,
+                ))
+            if found:
+                db.commit()
+                total_created += len(found)
+        except Exception:
+            logger.exception("[auto_generate] failed for item %s — skipping", item.id)
+
+    return {"connections_created": total_created}

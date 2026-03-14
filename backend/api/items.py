@@ -233,6 +233,23 @@ async def _save_item(result, db: Session, override_title: str | None = None) -> 
     db.commit()
     vectors.upsert_chunks(item.id, vector_chunks, content_type=item.content_type, tags=tags)
 
+    # Auto-detect connections to existing brain items (must be after upsert_chunks)
+    try:
+        from backend.ai.relations import detect_connections
+        from backend.store.db import Connection as ConnectionModel
+        found = detect_connections(item.id, result.content, db)
+        for c in found:
+            db.add(ConnectionModel(
+                source_item_id=item.id,
+                target_item_id=c["target_id"],
+                type=c["type"],
+                auto_generated=True,
+            ))
+        if found:
+            db.commit()
+    except Exception:
+        logger.exception("[auto_connections] failed for item %s — skipping", item.id)
+
     return _serialize(item)
 
 
