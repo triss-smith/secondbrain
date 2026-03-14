@@ -15,7 +15,7 @@ import ReactFlow, {
 } from 'reactflow'
 import 'reactflow/dist/style.css'
 
-import { getSettings, getItemSimilarities, createConnection, listConnections } from '../api'
+import { getSettings, getItemSimilarities, createConnection, listConnections, upsertSemanticConnection, dismissSemanticConnection } from '../api'
 import { categoryLayout, similarityLayout } from './layout'
 import { useBoard } from '../hooks/useBoard'
 import type { Item, SourceNodeData, Connection as AppConnection, ConnectionType } from '../types'
@@ -52,7 +52,7 @@ export function Board({ isDark = true }: Props) {
   const [edges, setEdges, onEdgesChange] = useEdgesState([])
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const organizeModeRef = useRef<string>('category')
-  const dismissedSemanticPairsRef = useRef<Set<string>>(new Set())
+  const semanticConnectionsRef = useRef<Map<string, number>>(new Map()) // "source-target" -> similarity
   const [similarityThreshold, setSimilarityThreshold] = useState<number>(0.3)
   const [organizeLabel, setOrganizeLabel] = useState<'category' | 'similarity'>('category')
   const [threeDOpen, setThreeDOpen] = useState(false)
@@ -80,7 +80,18 @@ export function Board({ isDark = true }: Props) {
         if (item) itemToNodeId[item.id] = n.id
       }
 
-      const manualEdges = conns
+      // Separate semantic connections (non-dismissed) from manual connections
+      const manualConns = conns.filter(c => !c.is_semantic)
+      const semanticConns = conns.filter(c => c.is_semantic && !c.dismissed)
+
+      // Store semantic connections for filtering similarity pairs
+      semanticConnectionsRef.current = new Map()
+      for (const sc of semanticConns) {
+        const key = `${sc.source_item_id}-${sc.target_item_id}`
+        semanticConnectionsRef.current.set(key, sc.similarity ?? 0)
+      }
+
+      const manualEdges = manualConns
         .filter(c => itemToNodeId[c.source_item_id] && itemToNodeId[c.target_item_id])
         .map(c => ({
           id: `manual-${c.id}`,
@@ -117,7 +128,7 @@ export function Board({ isDark = true }: Props) {
   function scheduleSave(ns = nodes, es = edges) {
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
     saveTimerRef.current = setTimeout(() => {
-      const persistEdges = es.filter(e => e.type !== 'manual')
+      const persistEdges = es.filter(e => e.type !== 'manual' && e.type !== 'semantic')
       saveState({ nodes: ns as never[], edges: persistEdges })
     }, 1500)
   }
@@ -197,11 +208,15 @@ export function Board({ isDark = true }: Props) {
     }
 
     function onRemoveSemanticEdge(e: Event) {
-      const { edge_id } = (e as CustomEvent).detail
+      const { edge_id, similarity } = (e as CustomEvent).detail
       // edge_id format: sem-${sourceItemId}-${targetItemId}
       const pair = edge_id.slice(4) // strip "sem-"
-      dismissedSemanticPairsRef.current.add(pair)
-      dismissedSemanticPairsRef.current.add(pair.split('-').reverse().join('-'))
+      const [source, target] = pair.split('-')
+      // Add to local ref to filter immediately
+      semanticConnectionsRef.current.set(`${source}-${target}`, -1)
+      semanticConnectionsRef.current.set(`${target}-${source}`, -1)
+      // Persist to DB
+      dismissSemanticConnection(source, target, similarity ?? 0.5).catch(console.error)
       setEdges(prev => prev.filter(e => e.id !== edge_id))
     }
 
@@ -315,18 +330,23 @@ export function Board({ isDark = true }: Props) {
     }
 
     getItemSimilarities(itemIds, similarityThreshold).then(pairs => {
-      const dismissed = dismissedSemanticPairsRef.current
-      const semanticEdges = pairs.flatMap(p => {
-        if (dismissed.has(`${p.source}-${p.target}`) || dismissed.has(`${p.target}-${p.source}`)) return []
-        const sourceNode = sourceNodes.find(n => (n.data as SourceNodeData).item.id === p.source)
-        const targetNode = sourceNodes.find(n => (n.data as SourceNodeData).item.id === p.target)
-        if (!sourceNode || !targetNode) return []
-        return [{ id: `sem-${p.source}-${p.target}`, source: sourceNode.id, target: targetNode.id, type: 'semantic', data: { similarity: p.similarity } }]
+      const dismissed = semanticConnectionsRef.current
+      // Upsert all pairs to DB, then filter out dismissed ones
+      Promise.all(pairs.map(p => upsertSemanticConnection(p.source, p.target, p.similarity))).then(() => {
+        const semanticEdges = pairs.flatMap(p => {
+          const keyA = `${p.source}-${p.target}`
+          const keyB = `${p.target}-${p.source}`
+          if (dismissed.has(keyA) || dismissed.has(keyB)) return []
+          const sourceNode = sourceNodes.find(n => (n.data as SourceNodeData).item.id === p.source)
+          const targetNode = sourceNodes.find(n => (n.data as SourceNodeData).item.id === p.target)
+          if (!sourceNode || !targetNode) return []
+          return [{ id: `sem-${p.source}-${p.target}`, source: sourceNode.id, target: targetNode.id, type: 'semantic', data: { similarity: p.similarity } }]
+        })
+        setEdges(prev => [
+          ...prev.filter(e => e.type !== 'semantic'),
+          ...semanticEdges,
+        ])
       })
-      setEdges(prev => [
-        ...prev.filter(e => e.type !== 'semantic'),
-        ...semanticEdges,
-      ])
     })
   }, [nodes.filter(n => n.type === 'source').map(n => n.id).join(','), similarityThreshold])
 

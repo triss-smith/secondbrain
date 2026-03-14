@@ -82,6 +82,9 @@ export interface Connection {
   source_item_id: string
   target_item_id: string
   type: ConnectionType
+  is_semantic: boolean
+  dismissed: boolean
+  similarity?: number
   auto_generated: boolean
   created_at: string
 }

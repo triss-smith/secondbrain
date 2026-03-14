@@ -162,6 +162,12 @@ export async function autoGenerateConnections(): Promise<{ connections_created: 
   return res.json()
 }
 
+export const upsertSemanticConnection = (source_item_id: string, target_item_id: string, similarity: number) =>
+  api.post<Connection>('/connections/semantic', { source_item_id, target_item_id, similarity }).then(r => r.data)
+
+export const dismissSemanticConnection = (source_item_id: string, target_item_id: string, similarity: number) =>
+  api.post<Connection>('/connections/semantic/dismiss', { source_item_id, target_item_id, similarity }).then(r => r.data)
+
 // Update
 export interface UpdateStatus {
   available: boolean

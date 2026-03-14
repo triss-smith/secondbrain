@@ -30,6 +30,9 @@ def _serialize(c: Connection) -> dict:
         "source_item_id": c.source_item_id,
         "target_item_id": c.target_item_id,
         "type": c.type,
+        "is_semantic": bool(c.is_semantic),
+        "dismissed": bool(c.dismissed),
+        "similarity": c.similarity,
         "auto_generated": bool(c.auto_generated),
         "created_at": c.created_at.isoformat(),
     }
@@ -118,3 +121,77 @@ def auto_generate_connections(db: Session = Depends(get_db)):
             logger.exception("[auto_generate] failed for item %s — skipping", item.id)
 
     return {"connections_created": total_created}
+
+
+class SemanticConnectionCreate(BaseModel):
+    source_item_id: str
+    target_item_id: str
+    similarity: float
+
+
+@router.post("/semantic", status_code=200)
+def upsert_semantic_connection(body: SemanticConnectionCreate, db: Session = Depends(get_db)):
+    """
+    Upsert a semantic connection (from item similarity).
+    Creates or updates the connection with is_semantic=True and the similarity score.
+    """
+    # Normalize: smaller ID first for consistent lookup
+    src, tgt = (body.source_item_id, body.target_item_id) if body.source_item_id < body.target_item_id else (body.target_item_id, body.source_item_id)
+
+    conn = db.query(Connection).filter_by(
+        source_item_id=src,
+        target_item_id=tgt,
+        is_semantic=True,
+    ).first()
+
+    if conn:
+        conn.similarity = body.similarity
+        conn.dismissed = False  # Re-create if it was dismissed
+    else:
+        conn = Connection(
+            source_item_id=src,
+            target_item_id=tgt,
+            type="related",
+            is_semantic=True,
+            similarity=body.similarity,
+            dismissed=False,
+        )
+        db.add(conn)
+
+    db.commit()
+    db.refresh(conn)
+    return _serialize(conn)
+
+
+@router.post("/semantic/dismiss")
+def dismiss_semantic_connection(body: SemanticConnectionCreate, db: Session = Depends(get_db)):
+    """
+    Dismiss a semantic connection so it won't be shown on the canvas.
+    """
+    src, tgt = (body.source_item_id, body.target_item_id) if body.source_item_id < body.target_item_id else (body.target_item_id, body.source_item_id)
+
+    conn = db.query(Connection).filter_by(
+        source_item_id=src,
+        target_item_id=tgt,
+        is_semantic=True,
+    ).first()
+
+    if conn:
+        conn.dismissed = True
+        db.commit()
+        db.refresh(conn)
+        return _serialize(conn)
+
+    # If not found, create as dismissed
+    conn = Connection(
+        source_item_id=src,
+        target_item_id=tgt,
+        type="related",
+        is_semantic=True,
+        similarity=body.similarity,
+        dismissed=True,
+    )
+    db.add(conn)
+    db.commit()
+    db.refresh(conn)
+    return _serialize(conn)

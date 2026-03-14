@@ -82,6 +82,9 @@ class Connection(Base):
     source_item_id = Column(String, ForeignKey("items.id", ondelete="CASCADE"), nullable=False)
     target_item_id = Column(String, ForeignKey("items.id", ondelete="CASCADE"), nullable=False)
     type = Column(String, nullable=False, default="related")
+    is_semantic = Column(Boolean, nullable=False, default=False)  # true = from similarity, not user-created
+    dismissed = Column(Boolean, nullable=False, default=False)    # true = user dismissed this semantic edge
+    similarity = Column(Float, nullable=True)  # similarity score for semantic edges
     auto_generated = Column(Boolean, nullable=False, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
     __table_args__ = (
@@ -106,5 +109,20 @@ with engine.connect() as conn:
     if "auto_generated" not in conn_cols:
         conn.execute(__import__('sqlalchemy').text(
             "ALTER TABLE connections ADD COLUMN auto_generated INTEGER NOT NULL DEFAULT 0"
+        ))
+        conn.commit()
+    if "is_semantic" not in conn_cols:
+        conn.execute(__import__('sqlalchemy').text(
+            "ALTER TABLE connections ADD COLUMN is_semantic INTEGER NOT NULL DEFAULT 0"
+        ))
+        conn.commit()
+    if "dismissed" not in conn_cols:
+        conn.execute(__import__('sqlalchemy').text(
+            "ALTER TABLE connections ADD COLUMN dismissed INTEGER NOT NULL DEFAULT 0"
+        ))
+        conn.commit()
+    if "similarity" not in conn_cols:
+        conn.execute(__import__('sqlalchemy').text(
+            "ALTER TABLE connections ADD COLUMN similarity REAL"
         ))
         conn.commit()
