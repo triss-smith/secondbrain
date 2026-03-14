@@ -188,15 +188,17 @@ function LibraryItem({
 
   return (
     <div onClick={onClick} className="flex items-start gap-3 px-3 py-2.5 hover:bg-surface-2 transition-colors group border-b border-surface-3/50 cursor-pointer">
-      <ItemCard
-        item={{ ...item, summary: summary ?? item.summary }}
-        compact
-        showThumbnail
-        onClick={onClick}
-        categoryLabel={categoryLabel}
-      />
+      <div className="flex-1 min-w-0 overflow-hidden">
+        <ItemCard
+          item={{ ...item, summary: summary ?? item.summary }}
+          compact
+          showThumbnail
+          onClick={onClick}
+          categoryLabel={categoryLabel}
+        />
+      </div>
 
-      <div className={`flex flex-col gap-1 transition-all ${resummarizing ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+      <div className={`flex flex-col gap-1 shrink-0 transition-all ${resummarizing ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
         <button
           onClick={e => { e.stopPropagation(); onAdd(item) }}
           className="nodrag shrink-0 text-slate-400 hover:text-accent p-1 rounded transition-colors"

@@ -18,6 +18,8 @@ def detect_type(url: str) -> str:
         return "youtube"
     if "tiktok.com" in u:
         return "tiktok"
+    if "twitter.com" in u or "x.com" in u:
+        return "twitter"
     if "instagram.com" in u:
         return "instagram"
     if "github.com" in u:
@@ -39,6 +41,8 @@ async def ingest_url(url: str) -> IngestResult:
         from backend.ingest.youtube import ingest
     elif kind == "tiktok":
         from backend.ingest.tiktok import ingest
+    elif kind == "twitter":
+        from backend.ingest.twitter import ingest
     elif kind == "instagram":
         from backend.ingest.instagram import ingest
     elif kind == "github":
