@@ -84,9 +84,9 @@ export function Board({ isDark = true }: Props) {
       const manualConns = conns.filter(c => !c.is_semantic)
       const semanticConns = conns.filter(c => c.is_semantic && !c.dismissed)
 
-      // Store semantic connections for filtering similarity pairs
+      // Store DISMISSED semantic connections for filtering similarity pairs
       semanticConnectionsRef.current = new Map()
-      for (const sc of semanticConns) {
+      for (const sc of semanticConns.filter(c => c.dismissed)) {
         const key = `${sc.source_item_id}-${sc.target_item_id}`
         semanticConnectionsRef.current.set(key, sc.similarity ?? 0)
       }
