@@ -156,6 +156,12 @@ export const updateConnection = (id: number, type: ConnectionType) =>
 export const deleteConnection = (id: number) =>
   api.delete(`/connections/${id}`).then(r => r.data)
 
+export async function autoGenerateConnections(): Promise<{ connections_created: number }> {
+  const res = await fetch('/api/connections/auto-generate', { method: 'POST' })
+  if (!res.ok) throw new Error('Auto-generate failed')
+  return res.json()
+}
+
 // Update
 export interface UpdateStatus {
   available: boolean

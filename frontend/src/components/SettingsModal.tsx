@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { CheckCircle, XCircle, Loader2 } from 'lucide-react'
-import { getSettings, saveSettings, testConnection, fetchCustomModels, type SettingsResponse } from '../api'
+import { getSettings, saveSettings, testConnection, fetchCustomModels, autoGenerateConnections, type SettingsResponse } from '../api'
 import { THEMES } from '../themes'
 import { Modal, ModalHeader, ModalBody } from './ui/Modal'
 import { Button } from './ui/Button'
@@ -31,6 +31,9 @@ export function SettingsModal({ onClose, themeId, onThemeChange }: Props) {
   const [fetchingModels, setFetchingModels] = useState(false)
   const [fetchModelsError, setFetchModelsError] = useState<string | null>(null)
   const [customModels, setCustomModels] = useState<string[]>([])
+  const [confirmAutoGen, setConfirmAutoGen] = useState(false)
+  const [autoGenerating, setAutoGenerating] = useState(false)
+  const [autoGenResult, setAutoGenResult] = useState<number | null>(null)
 
   useEffect(() => {
     getSettings().then(d => {
@@ -117,6 +120,17 @@ export function SettingsModal({ onClose, themeId, onThemeChange }: Props) {
       setSaveError(e instanceof Error ? e.message : 'Save failed')
     } finally {
       setSaving(false)
+    }
+  }
+
+  async function handleAutoGenerate() {
+    setAutoGenerating(true)
+    setConfirmAutoGen(false)
+    try {
+      const r = await autoGenerateConnections()
+      setAutoGenResult(r.connections_created)
+    } finally {
+      setAutoGenerating(false)
     }
   }
 
@@ -262,6 +276,50 @@ export function SettingsModal({ onClose, themeId, onThemeChange }: Props) {
                   <p className="text-xs text-slate-600 mt-0.5">Lets the model think before responding. Slower but more accurate for complex questions.</p>
                 </div>
                 <Toggle checked={enableThinking} onChange={setEnableThinking} />
+              </div>
+
+              {/* Brain Connections */}
+              <div>
+                <p className="text-xs font-medium text-slate-400 mb-1">Brain Connections</p>
+                <p className="text-xs text-slate-600 mb-2">
+                  Automatically detect related, supporting, contradicting, and duplicate connections
+                  across all items using semantic similarity. Existing auto-generated connections
+                  will be replaced.
+                </p>
+                {!confirmAutoGen ? (
+                  <button
+                    onClick={() => setConfirmAutoGen(true)}
+                    disabled={autoGenerating}
+                    className="text-xs text-amber-400 border border-amber-500/30 bg-amber-900/10 hover:bg-amber-900/20 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-40"
+                  >
+                    {autoGenerating ? 'Generating…' : 'Re-generate all connections'}
+                  </button>
+                ) : (
+                  <div className="bg-amber-950/30 border border-amber-500/30 rounded-lg p-2.5 text-xs">
+                    <p className="text-amber-300 mb-2">
+                      This replaces all auto-generated connections. Manually created connections are unaffected.
+                    </p>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={handleAutoGenerate}
+                        className="text-amber-400 border border-amber-500/30 bg-amber-900/10 hover:bg-amber-900/20 px-2.5 py-1 rounded-lg transition-colors"
+                      >
+                        Confirm
+                      </button>
+                      <button
+                        onClick={() => setConfirmAutoGen(false)}
+                        className="text-slate-400 hover:text-white px-2.5 py-1 rounded-lg transition-colors"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                )}
+                {autoGenResult !== null && (
+                  <p className="text-xs text-green-400 mt-1.5">
+                    Done — {autoGenResult} connection{autoGenResult !== 1 ? 's' : ''} created.
+                  </p>
+                )}
               </div>
 
               {testResult && (
