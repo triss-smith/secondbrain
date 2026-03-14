@@ -52,6 +52,17 @@ if errorlevel 1 (echo ERROR: Dependency install failed. && exit /b 1)
 echo     Done.
 echo.
 
+:: ── 2b. Download NLI model ────────────────────────────────────────────────────
+echo [2b] Downloading NLI model (cross-encoder/nli-deberta-v3-xsmall)...
+if exist "installer\models\nli-deberta-v3-xsmall\config.json" (
+    echo     Already downloaded, skipping.
+) else (
+    installer\python-embed\python.exe -c "from sentence_transformers import CrossEncoder; m = CrossEncoder('cross-encoder/nli-deberta-v3-xsmall'); m.save('installer/models/nli-deberta-v3-xsmall')"
+    if errorlevel 1 (echo ERROR: NLI model download failed. && exit /b 1)
+)
+echo     Done.
+echo.
+
 :: ── 3. Create output directory ───────────────────────────────────────────────
 if not exist dist mkdir dist
 

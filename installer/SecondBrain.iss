@@ -34,6 +34,8 @@ Source: "..\requirements.txt"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\VERSION"; DestDir: "{app}"; Flags: ignoreversion
 ; Embedded Python (set up by build.bat — includes pip)
 Source: "..\installer\python-embed\*"; DestDir: "{app}\python"; Flags: recursesubdirs ignoreversion
+; NLI model (bundled for offline use)
+Source: "..\installer\models\nli-deberta-v3-xsmall\*"; DestDir: "{app}\models\nli-deberta-v3-xsmall"; Flags: recursesubdirs ignoreversion
 
 [Icons]
 ; Start Menu

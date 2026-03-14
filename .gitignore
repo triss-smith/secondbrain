@@ -34,6 +34,7 @@ installer/python-embed/
 installer/get-pip.py
 installer/*.zip
 installer/*.pfx
+installer/models/
 
 # Runtime update flag
 update.json
