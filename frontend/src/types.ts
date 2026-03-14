@@ -75,13 +75,14 @@ export interface ChatMessage {
   content: string
 }
 
-export type ConnectionType = 'related' | 'source' | 'inspired_by' | 'contradicts'
+export type ConnectionType = 'related' | 'source' | 'inspired_by' | 'contradicts' | 'supports' | 'duplicate'
 
 export interface Connection {
   id: number
   source_item_id: string
   target_item_id: string
   type: ConnectionType
+  auto_generated: boolean
   created_at: string
 }
 

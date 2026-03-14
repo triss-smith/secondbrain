@@ -10,6 +10,8 @@ export const CONNECTION_TYPES: ConnectionType[] = [
   'source',
   'inspired_by',
   'contradicts',
+  'supports',
+  'duplicate',
 ]
 
 export const CONNECTION_TYPE_CONFIG: Record<ConnectionType, ConnectionTypeConfig> = {
@@ -28,6 +30,14 @@ export const CONNECTION_TYPE_CONFIG: Record<ConnectionType, ConnectionTypeConfig
   contradicts: {
     label: 'Contradicts',
     color: '#f87171',
+  },
+  supports: {
+    label: 'Supports',
+    color: '#a78bfa',
+  },
+  duplicate: {
+    label: 'Duplicate',
+    color: '#94a3b8',
   },
 }
 
